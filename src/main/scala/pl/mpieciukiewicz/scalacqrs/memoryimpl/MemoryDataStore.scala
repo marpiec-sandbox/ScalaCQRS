@@ -1,11 +1,15 @@
 package pl.mpieciukiewicz.scalacqrs.memoryimpl
 
+import java.lang
+import java.lang.reflect.Constructor
+
 import org.slf4j.LoggerFactory
 import pl.mpieciukiewicz.scalacqrs.{UID, Aggregate, DataStore, EventStore}
 
 class MemoryDataStore(val eventStore: EventStore) extends DataStore {
 
   private val Log = LoggerFactory.getLogger(classOf[MemoryDataStore])
+  private val boxedZero: lang.Long = Long.box(0)
 
   override def getAggregateByVersion[T <: Aggregate](aggregateClass: Class[T], uid: UID, version: Int): T = getAggregateWithOptionalVersion(aggregateClass, uid, Some(version))
 
@@ -19,7 +23,9 @@ class MemoryDataStore(val eventStore: EventStore) extends DataStore {
       eventStore.getEventsForAggregate(aggregateClass, uid)
     }
 
-    val aggregate = aggregateClass.getConstructor(classOf[UID], classOf[Long]).newInstance(UID.ZERO, 0)
+    val constructor: Constructor[T] = aggregateClass.getConstructor(Array[Class[_]](classOf[UID], classOf[Long]): _*)
+
+    val aggregate = constructor.newInstance(UID.ZERO, boxedZero)
 
     eventRows.foreach((eventRow) => {
       if (eventRow.expectedAggregateVersion == aggregate.version) {
