@@ -1,12 +1,14 @@
 package pl.mpieciukiewicz.scalacqrs.memoryimpl
 
+import java.util.concurrent.atomic.AtomicLong
+
 import pl.mpieciukiewicz.scalacqrs.{UID, UIDGenerator}
 
 class MemorySequentialUIDGenerator extends UIDGenerator {
-  private var uid: Long = 0L
+
+  private val uid = new AtomicLong(0L)
 
   def nextUID = {
-    uid += 1
-    new UID(uid)
+    new UID(uid.getAndIncrement)
   }
 }
