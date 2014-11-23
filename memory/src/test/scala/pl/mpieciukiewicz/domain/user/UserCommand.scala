@@ -3,7 +3,7 @@ package pl.mpieciukiewicz.domain.user
 import pl.mpieciukiewicz.domain.user.event.{UserRemovedEvent, UserAddressChangedEvent, UserRegisteredEvent}
 import pl.mpieciukiewicz.scalacqrs.{UID, EventStore}
 
-class UserService(eventStore: EventStore) {
+class UserCommand(eventStore: EventStore) {
 
   def registerUser(userId: UID, newAggregateId: UID, name: String): Unit = {
     eventStore.addCreationEvent(userId, newAggregateId, UserRegisteredEvent(name))

@@ -5,7 +5,7 @@ import java.time.Clock
 import org.fest.assertions.api.Assertions.assertThat
 
 import org.scalatest.{FeatureSpec, GivenWhenThen}
-import pl.mpieciukiewicz.domain.user.UserService
+import pl.mpieciukiewicz.domain.user.UserCommand
 import pl.mpieciukiewicz.domain.user.entity.{Address, User}
 import pl.mpieciukiewicz.scalacqrs.memoryimpl.{MemoryUIDGenerator, MemoryDataStore, MemoryEventStore}
 
@@ -21,12 +21,12 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
       val dataStore = new MemoryDataStore(eventStore)
       val uidGenerator = new MemoryUIDGenerator
 
-      val userService = new UserService(eventStore)
+      val userCommand = new UserCommand(eventStore)
 
       When("User is registered")
       val currentUserId = uidGenerator.nextUID
       val registeredUserId = uidGenerator.nextUID
-      userService.registerUser(currentUserId, registeredUserId, "Marcin Pieciukiewicz")
+      userCommand.registerUser(currentUserId, registeredUserId, "Marcin Pieciukiewicz")
 
       Then("we can get aggregate from dataStore")
       var userAggregate = dataStore.getAggregate(classOf[User], registeredUserId)
@@ -34,7 +34,7 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
 
 
       When("Address is defined for user")
-      userService.changeUserAddress(currentUserId, registeredUserId, 1, "Warsaw", "Center", "1")
+      userCommand.changeUserAddress(currentUserId, registeredUserId, 1, "Warsaw", "Center", "1")
 
       Then("we can get modified user from dataStore")
       userAggregate = dataStore.getAggregate(classOf[User], registeredUserId)
@@ -45,7 +45,7 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
       assertThat(userAggregate.aggregateRoot.get).isEqualTo(User("Marcin Pieciukiewicz", None))
 
       When("User is removed")
-      userService.removeUser(currentUserId, registeredUserId, 2)
+      userCommand.removeUser(currentUserId, registeredUserId, 2)
 
       Then("Will get empty aggregate from dataStore")
       userAggregate = dataStore.getAggregate(classOf[User], registeredUserId)
