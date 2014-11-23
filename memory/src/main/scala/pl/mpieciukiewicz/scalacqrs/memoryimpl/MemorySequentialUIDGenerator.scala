@@ -8,7 +8,6 @@ class MemorySequentialUIDGenerator extends UIDGenerator {
 
   private val uid = new AtomicLong(0L)
 
-  def nextUID = {
-    new UID(uid.getAndIncrement)
-  }
+  def nextUID = UID(uid.getAndIncrement)
+
 }
