@@ -7,7 +7,7 @@ import org.fest.assertions.api.Assertions.assertThat
 import org.scalatest.{FeatureSpec, GivenWhenThen}
 import pl.mpieciukiewicz.domain.user.UserCommand
 import pl.mpieciukiewicz.domain.user.entity.{Address, User}
-import pl.mpieciukiewicz.scalacqrs.memoryimpl.{MemoryUIDGenerator, MemoryDataStore, MemoryEventStore}
+import pl.mpieciukiewicz.scalacqrs.memoryimpl.{MemorySequentialUIDGenerator, MemoryDataStore, MemoryEventStore}
 
 class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
 
@@ -19,7 +19,7 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
 
       val eventStore = new MemoryEventStore(Clock.systemDefaultZone())
       val dataStore = new MemoryDataStore(eventStore)
-      val uidGenerator = new MemoryUIDGenerator
+      val uidGenerator = new MemorySequentialUIDGenerator
 
       val userCommand = new UserCommand(eventStore)
 
