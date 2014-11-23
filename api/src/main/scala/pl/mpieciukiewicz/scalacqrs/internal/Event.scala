@@ -1,10 +1,6 @@
 package pl.mpieciukiewicz.scalacqrs.internal
 
-trait AbstractEvent[T] {
-
-  def apply():T
-
-  def apply(entity: T):T
+trait Event[T] {
 
   def entityClass: Class[T]
 }

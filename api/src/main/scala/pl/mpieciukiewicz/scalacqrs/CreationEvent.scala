@@ -1,11 +1,8 @@
 package pl.mpieciukiewicz.scalacqrs
 
-import pl.mpieciukiewicz.scalacqrs.internal.AbstractEvent
+import pl.mpieciukiewicz.scalacqrs.internal.Event
 
-trait CreationEvent[T] extends AbstractEvent[T] {
+trait CreationEvent[T] extends Event[T] {
 
-  override final def apply(entity: T): T = {
-    throw new IllegalAccessException("This type of event doesn't support modification of existing aggregate!")
-  }
-
+  def apply(): T
 }

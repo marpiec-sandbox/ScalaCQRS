@@ -1,12 +1,14 @@
 package pl.mpieciukiewicz.scalacqrs
 
-import pl.mpieciukiewicz.scalacqrs.internal.AbstractEvent
+import pl.mpieciukiewicz.scalacqrs.internal.Event
 
 trait EventStore {
 
-  def addEventForNewAggregate[T](userId: UID, newAggregateId: UID, event: CreationEvent[T])
+  def addCreationEvent[T](userId: UID, newAggregateId: UID, event: CreationEvent[T])
 
-  def addEventForExistingAggregate[T](userId: UID, aggregateId: UID, expectedVersion: Int, event: ModificationEvent[T])
+  def addModificationEvent[T](userId: UID, aggregateId: UID, expectedVersion: Int, event: ModificationEvent[T])
+
+  def addDeletionEvent[T](userId: UID, aggregateId: UID, expectedVersion: Int, event: DeletionEvent[T])
 
   def getEventsForAggregate[T](aggregateClass: Class[T], uid: UID): List[EventRow[T]]
 
