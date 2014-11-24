@@ -30,7 +30,7 @@ class CoreDataStore(val eventStore: EventStore) extends DataStore {
 
 
     val creatorEventRow: EventRow[T] = eventRows.head
-    if (creatorEventRow.expectedAggregateVersion != 0) {
+    if (creatorEventRow.version != 0) {
       throw new IllegalStateException("CreatorEvent need to expect version 0 of an aggregate, as it not exists before that event.")
     }
     val aggregateRoot = creatorEventRow.event.asInstanceOf[CreationEvent[T]].apply()
@@ -38,7 +38,7 @@ class CoreDataStore(val eventStore: EventStore) extends DataStore {
     var aggregate = Aggregate(uid, 1, Some(aggregateRoot))
 
     eventRows.tail.foreach((eventRow) => {
-      if (eventRow.expectedAggregateVersion == aggregate.version && aggregate.aggregateRoot.isDefined) {
+      if (eventRow.version == aggregate.version && aggregate.aggregateRoot.isDefined) {
         aggregate = eventRow.event match {
           case event: ModificationEvent[T] => Aggregate(aggregate.uid, aggregate.version + 1, Some(event.apply(aggregateRoot)))
           case event: DeletionEvent[T] => Aggregate(aggregate.uid, aggregate.version + 1, None)
@@ -48,7 +48,7 @@ class CoreDataStore(val eventStore: EventStore) extends DataStore {
       } else {
         throw new IllegalStateException("Unexpected version for aggregate when applying eventRow. " +
           "[aggregateType:" + aggregateRootClass.getName + ", aggregateId:" + uid + ", aggregateVersion:" +
-          aggregate.version + "eventType:" + eventRow.getClass.getName + ", expectedVersion:" + eventRow.expectedAggregateVersion + "]")
+          aggregate.version + "eventType:" + eventRow.getClass.getName + ", expectedVersion:" + eventRow.version + "]")
       }
     })
 
