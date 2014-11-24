@@ -1,12 +1,12 @@
-package pl.mpieciukiewicz.scalacqrs.memoryimpl
+package pl.mpieciukiewicz.scalacqrs.core
 
 import org.slf4j.LoggerFactory
 import pl.mpieciukiewicz.scalacqrs._
 import pl.mpieciukiewicz.scalacqrs.exception.AggregateWasAlreadyDeletedException
 
-class MemoryDataStore(val eventStore: EventStore) extends DataStore {
+class CoreDataStore(val eventStore: EventStore) extends DataStore {
 
-  private val Log = LoggerFactory.getLogger(classOf[MemoryDataStore])
+  private val Log = LoggerFactory.getLogger(classOf[CoreDataStore])
 
   override def getAggregateByVersion[T](aggregateClass: Class[T], uid: UID, version: Int): Aggregate[T] = getAggregateWithOptionalVersion(aggregateClass, uid, Some(version))
 

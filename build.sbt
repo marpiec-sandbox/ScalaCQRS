@@ -7,7 +7,9 @@ scalaVersion := "2.11.4"
 scalacOptions ++= Seq(
   "-feature")
 
+publish := {}
 
 lazy val api = project
-
-lazy val memory = project.dependsOn(api)
+lazy val core = project.dependsOn(api)
+lazy val memory = project.dependsOn(api, core)
+lazy val jdbc = project.dependsOn(api, core)
