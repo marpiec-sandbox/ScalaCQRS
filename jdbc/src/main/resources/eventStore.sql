@@ -29,7 +29,7 @@ $$
 DECLARE
     current_version int;
 BEGIN
- SELECT aggregates.version INTO current_version from aggregates where class = aggregate_type and uid = aggregate_uid;
+ SELECT aggregates.version INTO current_version from aggregates where uid = aggregate_uid;
     IF NOT FOUND THEN
         IF expected_version = 0 THEN
             INSERT INTO AGGREGATES (id, class, uid, version) VALUES (NEXTVAL('aggregates_seq'), aggregate_type, aggregate_uid, 0);
