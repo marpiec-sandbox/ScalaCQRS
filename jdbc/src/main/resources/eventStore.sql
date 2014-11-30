@@ -16,7 +16,6 @@ CREATE TABLE IF NOT EXISTS aggregates (
 CREATE SEQUENCE events_seq;
 CREATE SEQUENCE aggregates_seq;
 CREATE SEQUENCE uids_seq INCREMENT BY 100;
-SELECT nextval('uids_seq'); -- required to properly initialize last_value, for uid pooling
 
 CREATE OR REPLACE FUNCTION add_event(user_uid bigint, aggregate_uid bigint, expected_version INT, aggregate_type VARCHAR(128), event_type VARCHAR(128), event VARCHAR(10240))
 RETURNS void AS

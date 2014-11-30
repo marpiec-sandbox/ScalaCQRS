@@ -1,30 +1,42 @@
 package pl.mpieciukiewicz.scalacqrs.jdbcimpl
 
+import java.sql.Connection
 import javax.sql.DataSource
 
 import pl.mpieciukiewicz.scalacqrs.{UID, UIDGenerator}
 
 class JdbcUIDGenerator(dbDataSource: DataSource) extends UIDGenerator {
 
-  val query = "SELECT last_value, NEXTVAL('uids_seq') FROM uids_seq"
+  val NEXT_VAL_QUERY = "SELECT NEXTVAL('uids_seq')"
+  val SEQUENCE_STEP_QUERY = "SELECT increment_by FROM uids_seq"
 
-  var current = 0L
+  val stepMinusOne = loadSequenceStep(dbDataSource.getConnection) - 1
+  var previousValue = 0L
   var maximum = 0L
 
   override def nextUID: UID = synchronized {
-    if(current == maximum) {
+    if(previousValue == maximum) {
       val connection = dbDataSource.getConnection
-      val resultSet = connection.prepareStatement(query).executeQuery()
+      val resultSet = connection.prepareStatement(NEXT_VAL_QUERY).executeQuery()
       if (resultSet.next()) {
-        current = resultSet.getLong(1)
-        maximum = resultSet.getLong(2) - 1
+        previousValue = resultSet.getLong(1)
+        maximum = previousValue + stepMinusOne
       } else {
         throw new IllegalStateException("Query returned no values, that should not happen.")
       }
     } else {
-      current += 1
+      previousValue += 1
     }
-    UID(current)
+    UID(previousValue)
 
+  }
+
+  private def loadSequenceStep(connection: Connection):Long = {
+    val resultSet = connection.prepareStatement(SEQUENCE_STEP_QUERY).executeQuery()
+    if (resultSet.next()) {
+      resultSet.getLong(1)
+    } else {
+      throw new IllegalStateException("Query returned no values, that should not happen.")
+    }
   }
 }
