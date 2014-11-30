@@ -16,9 +16,21 @@ import pl.mpieciukiewicz.scalacqrs.internal.Event
 
 class JdbcEventStore(dbDataSource: DataSource, serializer: EventSerializer) extends EventStore {
 
-  val SELECT_EVENTS_QUERY = "SELECT user_uid, aggregate_uid, version, event_time, event_type, event" +
+  val SELECT_EVENTS_QUERY = "SELECT user_uid, aggregate_uid, version, event_time, event_type, event " +
     "FROM events " +
     "WHERE aggregate_uid = ? " +
+    "ORDER BY version"
+
+  val SELECT_EVENTS_QUERY_TO_VERSION = "SELECT user_uid, aggregate_uid, version, event_time, event_type, event " +
+    "FROM events " +
+    "WHERE aggregate_uid = ? " +
+    "AND version <= ? " +
+    "ORDER BY version"
+
+  val SELECT_EVENTS_QUERY_FROM_VERSION = "SELECT user_uid, aggregate_uid, version, event_time, event_type, event " +
+    "FROM events " +
+    "WHERE aggregate_uid = ? " +
+    "AND version >= ? " +
     "ORDER BY version"
 
   val SELECT_EVENTS_BY_TYPE = "SELECT user_uid, aggregate_uid, version, event, event_type " +
@@ -27,19 +39,36 @@ class JdbcEventStore(dbDataSource: DataSource, serializer: EventSerializer) exte
     "ORDER BY version"
 
 
-
-
-
-
   override def getEventsForAggregate[T](aggregateClass: Class[T], uid: UID): List[EventRow[T]] = {
 
     val connection = dbDataSource.getConnection
     val statement = connection.prepareStatement(SELECT_EVENTS_QUERY)
     statement.setLong(1, uid.uid)
+    getEvents(connection, statement)
+  }
+
+  override def getEventsForAggregateFromVersion[T](aggregateClass: Class[T], uid: UID, fromVersion: Int): List[EventRow[T]] = {
+    val connection = dbDataSource.getConnection
+    val statement = connection.prepareStatement(SELECT_EVENTS_QUERY_FROM_VERSION)
+    statement.setLong(1, uid.uid)
+    statement.setInt(2, fromVersion)
+    getEvents(connection, statement)
+  }
+
+  override def getEventsForAggregateToVersion[T](aggregateClass: Class[T], uid: UID, toVersion: Int): List[EventRow[T]] = {
+    val connection = dbDataSource.getConnection
+    val statement = connection.prepareStatement(SELECT_EVENTS_QUERY_TO_VERSION)
+    statement.setLong(1, uid.uid)
+    statement.setLong(2, toVersion)
+    getEvents(connection, statement)
+  }
+
+
+  private def getEvents[T](connection: Connection, statement: PreparedStatement): List[EventRow[T]] = {
     val resultSet = statement.executeQuery()
 
     var eventsRows = List[EventRow[T]]()
-    while(resultSet.next()) {
+    while (resultSet.next()) {
       val eventRow = EventRow[T](
         UID(resultSet.getLong(1)),
         UID(resultSet.getLong(2)),
@@ -54,9 +83,6 @@ class JdbcEventStore(dbDataSource: DataSource, serializer: EventSerializer) exte
     eventsRows.reverse
   }
 
-  override def getEventsForAggregateFromVersion[T](aggregateClass: Class[T], uid: UID, fromVersion: Int): List[EventRow[T]] = ???
-
-  override def getEventsForAggregateToVersion[T](aggregateClass: Class[T], uid: UID, toVersion: Int): List[EventRow[T]] = ???
 
   override def addCreationEvent[T](userId: UID, newAggregateId: UID, event: CreationEvent[T]): Unit =
     addEvent(userId, newAggregateId, 0, event)

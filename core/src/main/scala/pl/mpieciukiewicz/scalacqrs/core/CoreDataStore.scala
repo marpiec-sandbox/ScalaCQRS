@@ -16,7 +16,7 @@ class CoreDataStore(val eventStore: EventStore) extends DataStore {
   private def getAggregateWithOptionalVersion[T](aggregateRootClass: Class[T], uid: UID, version: Option[Int]): Aggregate[T] = {
     val eventRows = if (version.isDefined) {
       if (version.get < 1) {
-        throw new IllegalArgumentException("Cannot get aggregates for versions lower than 1");
+        throw new IllegalArgumentException("Cannot get aggregates for versions lower than 1")
       } else {
         eventStore.getEventsForAggregateToVersion(aggregateRootClass, uid, version.get)
       }
@@ -30,15 +30,15 @@ class CoreDataStore(val eventStore: EventStore) extends DataStore {
 
 
     val creatorEventRow: EventRow[T] = eventRows.head
-    if (creatorEventRow.version != 0) {
-      throw new IllegalStateException("CreatorEvent need to expect version 0 of an aggregate, as it not exists before that event.")
+    if (creatorEventRow.version != 1) {
+      throw new IllegalStateException("CreatorEvent need to be of version 1, as it always first event for an aggregate.")
     }
     val aggregateRoot = creatorEventRow.event.asInstanceOf[CreationEvent[T]].apply()
 
     var aggregate = Aggregate(uid, 1, Some(aggregateRoot))
 
     eventRows.tail.foreach((eventRow) => {
-      if (eventRow.version == aggregate.version && aggregate.aggregateRoot.isDefined) {
+      if (eventRow.version == aggregate.version + 1 && aggregate.aggregateRoot.isDefined) {
         aggregate = eventRow.event match {
           case event: ModificationEvent[T] => Aggregate(aggregate.uid, aggregate.version + 1, Some(event.apply(aggregateRoot)))
           case event: DeletionEvent[T] => Aggregate(aggregate.uid, aggregate.version + 1, None)
@@ -48,7 +48,7 @@ class CoreDataStore(val eventStore: EventStore) extends DataStore {
       } else {
         throw new IllegalStateException("Unexpected version for aggregate when applying eventRow. " +
           "[aggregateType:" + aggregateRootClass.getName + ", aggregateId:" + uid + ", aggregateVersion:" +
-          aggregate.version + "eventType:" + eventRow.getClass.getName + ", expectedVersion:" + eventRow.version + "]")
+          aggregate.version + ", eventType:" + eventRow.getClass.getName + ", expectedVersion:" + eventRow.version + "]")
       }
     })
 

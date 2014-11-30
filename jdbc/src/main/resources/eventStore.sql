@@ -13,15 +13,10 @@ CREATE TABLE IF NOT EXISTS aggregates (
   uid BIGINT NOT NULL,
   version INT NOT NULL);
 
-CREATE TABLE IF NOT EXISTS uids (
-  id INT NOT NULL PRIMARY KEY,
-  uidName VARCHAR(128) NOT NULL,
-  uid BIGINT NOT NULL);
-
-
 CREATE SEQUENCE events_seq;
 CREATE SEQUENCE aggregates_seq;
-CREATE SEQUENCE uids_seq;
+CREATE SEQUENCE uids_seq INCREMENT BY 100;
+SELECT nextval('uids_seq'); -- required to properly initialize last_value, for uid pooling
 
 CREATE OR REPLACE FUNCTION add_event(user_uid bigint, aggregate_uid bigint, expected_version INT, aggregate_type VARCHAR(128), event_type VARCHAR(128), event VARCHAR(10240))
 RETURNS void AS
@@ -48,9 +43,6 @@ $$
 LANGUAGE 'plpgsql' VOLATILE;
 
 
-SELECT add_event(2, 2, 0, 'User', 'register', 'Marcin');
-
-
-SELECT add_event(2, 2, 1, 'User', 'update_name', 'MARS');
-
-SELECT add_event(2, 2, 1, 'User', 'update_name', 'WENUS');
+--SELECT add_event(2, 2, 0, 'User', 'register', 'Marcin');
+--SELECT add_event(2, 2, 1, 'User', 'update_name', 'MARS');
+--SELECT add_event(2, 2, 1, 'User', 'update_name', 'WENUS');
