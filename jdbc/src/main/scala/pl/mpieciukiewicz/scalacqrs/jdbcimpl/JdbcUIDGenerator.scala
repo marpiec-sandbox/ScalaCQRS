@@ -9,10 +9,10 @@ class JdbcUIDGenerator(dbDataSource: DataSource) extends UIDGenerator {
   val query = "SELECT last_value, NEXTVAL('uids_seq') FROM uids_seq"
 
   var current = 0L
-  var maximum = -1L
+  var maximum = 0L
 
   override def nextUID: UID = synchronized {
-    if(current > maximum) {
+    if(current == maximum) {
       val connection = dbDataSource.getConnection
       val resultSet = connection.prepareStatement(query).executeQuery()
       if (resultSet.next()) {
