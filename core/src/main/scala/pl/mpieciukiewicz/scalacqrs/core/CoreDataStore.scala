@@ -31,7 +31,8 @@ class CoreDataStore(val eventStore: EventStore) extends DataStore {
 
     val creatorEventRow: EventRow[T] = eventRows.head
     if (creatorEventRow.version != 1) {
-      throw new IllegalStateException("CreatorEvent need to be of version 1, as it always first event for an aggregate.")
+      throw new IllegalStateException("CreatorEvent need to be of version 1, as it always first event for an aggregate. ("+
+        creatorEventRow.event.getClass+" has version "+creatorEventRow.version+")")
     }
     val aggregateRoot = creatorEventRow.event.asInstanceOf[CreationEvent[T]].apply()
 

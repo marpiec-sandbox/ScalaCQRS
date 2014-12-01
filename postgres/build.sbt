@@ -1,4 +1,4 @@
-name := "scala-cqrs-jdbc"
+name := "scala-cqrs-postgres"
 
 version := "1.0.0"
 

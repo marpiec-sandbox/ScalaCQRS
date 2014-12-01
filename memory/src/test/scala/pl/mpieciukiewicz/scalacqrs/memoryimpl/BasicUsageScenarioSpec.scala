@@ -1,14 +1,12 @@
-package pl.mpieciukiewicz.scalacqrs
+package pl.mpieciukiewicz.scalacqrs.memoryimpl
 
 import java.time.Clock
 
 import org.fest.assertions.api.Assertions.assertThat
-
 import org.scalatest.{FeatureSpec, GivenWhenThen}
 import pl.mpieciukiewicz.domain.user.UserCommand
 import pl.mpieciukiewicz.domain.user.entity.{Address, User}
 import pl.mpieciukiewicz.scalacqrs.core.CoreDataStore
-import pl.mpieciukiewicz.scalacqrs.memoryimpl.{MemorySequentialUIDGenerator, MemoryEventStore}
 
 class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
 

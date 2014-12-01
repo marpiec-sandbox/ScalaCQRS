@@ -16,7 +16,7 @@ class MemoryEventStore(clock: Clock) extends EventStore {
   override def addCreationEvent[T](userId: UID, newAggregateId: UID, event: CreationEvent[T]): Unit = {
     val eventsForType = eventsByType.getOrElseUpdate(event.entityClass, new mutable.HashMap[UID, ListBuffer[EventRow[_]]])
     val eventsForEntity = eventsForType.getOrElseUpdate(newAggregateId, new ListBuffer[EventRow[_]])
-    val eventRow = EventRow(userId, newAggregateId, 0, clock.instant(), event)
+    val eventRow = EventRow(userId, newAggregateId, 1, clock.instant(), event)
     eventsForEntity += eventRow
   }
 
@@ -28,7 +28,7 @@ class MemoryEventStore(clock: Clock) extends EventStore {
         throw new ConcurrentAggregateModificationException("Expected version " + expectedVersion + " but is " + eventsForEntity.size)
       }
 
-      eventsForEntity += EventRow(userId, aggregateId, expectedVersion, clock.instant(), event)
+      eventsForEntity += EventRow(userId, aggregateId, expectedVersion + 1, clock.instant(), event)
   }
 
 
@@ -40,7 +40,7 @@ class MemoryEventStore(clock: Clock) extends EventStore {
       throw new ConcurrentAggregateModificationException("Expected version " + expectedVersion + " but is " + eventsForEntity.size)
     }
 
-    eventsForEntity += EventRow(userId, aggregateId, expectedVersion, clock.instant(), event)
+    eventsForEntity += EventRow(userId, aggregateId, expectedVersion + 1, clock.instant(), event)
   }
 
   override def getEventsForAggregate[T](aggregateClass: Class[T], uid: UID): List[EventRow[T]] = {

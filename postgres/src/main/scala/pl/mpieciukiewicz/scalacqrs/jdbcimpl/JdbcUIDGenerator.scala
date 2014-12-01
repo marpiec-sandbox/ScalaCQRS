@@ -17,12 +17,16 @@ class JdbcUIDGenerator(dbDataSource: DataSource) extends UIDGenerator {
   override def nextUID: UID = synchronized {
     if(previousValue == maximum) {
       val connection = dbDataSource.getConnection
-      val resultSet = connection.prepareStatement(NEXT_VAL_QUERY).executeQuery()
-      if (resultSet.next()) {
-        previousValue = resultSet.getLong(1)
-        maximum = previousValue + stepMinusOne
-      } else {
-        throw new IllegalStateException("Query returned no values, that should not happen.")
+      try {
+        val resultSet = connection.prepareStatement(NEXT_VAL_QUERY).executeQuery()
+        if (resultSet.next()) {
+          previousValue = resultSet.getLong(1)
+          maximum = previousValue + stepMinusOne
+        } else {
+          throw new IllegalStateException("Query returned no values, that should not happen.")
+        }
+      } finally {
+        connection.close()
       }
     } else {
       previousValue += 1
@@ -33,10 +37,12 @@ class JdbcUIDGenerator(dbDataSource: DataSource) extends UIDGenerator {
 
   private def loadSequenceStep(connection: Connection):Long = {
     val resultSet = connection.prepareStatement(SEQUENCE_STEP_QUERY).executeQuery()
-    if (resultSet.next()) {
+    val result = if (resultSet.next()) {
       resultSet.getLong(1)
     } else {
       throw new IllegalStateException("Query returned no values, that should not happen.")
     }
+    connection.close()
+    result
   }
 }

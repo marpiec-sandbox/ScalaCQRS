@@ -13,7 +13,8 @@ object ConnectionPoolFactory {
     connectionPool.setPassword("eventstore")
     connectionPool.setDriverClassName("org.postgresql.Driver")
     connectionPool.setUrl("jdbc:postgresql://localhost:5432/eventstore")
-    connectionPool.setInitialSize(5)
+    connectionPool.setInitialSize(10)
+    connectionPool.setMaxTotal(20)
     connectionPool
   }
 
