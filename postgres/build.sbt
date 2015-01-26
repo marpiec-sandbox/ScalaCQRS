@@ -1,8 +1,10 @@
-name := "scala-cqrs-postgres"
+name := "postgres"
 
-version := "1.0.0"
+organization := "pl.mpieciukiewicz.scala-cqrs"
 
-scalaVersion := "2.11.4"
+version := "0.1-SNAPSHOT"
+
+scalaVersion := "2.11.5"
 
 resolvers ++= Seq("marpiec BinTray" at "http://dl.bintray.com/marpiec/maven/")
 

@@ -1,13 +1,17 @@
 name := "scala-cqrs"
 
-version := "1.0.0"
+organization := "pl.mpieciukiewicz"
 
-scalaVersion := "2.11.4"
+version := "0.1-SNAPSHOT"
+
+scalaVersion := "2.11.5"
 
 scalacOptions ++= Seq(
   "-feature")
 
 publish := {}
+
+publishLocal := {}
 
 lazy val api = project
 lazy val core = project.dependsOn(api)

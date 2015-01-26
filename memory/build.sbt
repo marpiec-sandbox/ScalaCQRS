@@ -1,8 +1,10 @@
-name := "scala-cqrs-memory"
+name := "memory"
 
-version := "1.0.0"
+organization := "pl.mpieciukiewicz.scala-cqrs"
 
-scalaVersion := "2.11.4"
+version := "0.1-SNAPSHOT"
+
+scalaVersion := "2.11.5"
 
 libraryDependencies ++= Seq("org.slf4j" % "slf4j-api" % "1.7.7",
   "org.scalatest" %% "scalatest" % "2.2.2" % Test,

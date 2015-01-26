@@ -1,5 +1,7 @@
-name := "scala-cqrs-api"
+name := "api"
 
-version := "1.0.0"
+organization := "pl.mpieciukiewicz.scala-cqrs"
 
-scalaVersion := "2.11.4"
+version := "0.1-SNAPSHOT"
+
+scalaVersion := "2.11.5"
