@@ -6,7 +6,7 @@ import org.fest.assertions.api.Assertions.assertThat
 import org.postgresql.ds.jdbc4.AbstractJdbc4PoolingDataSource
 
 import org.scalatest.{FeatureSpec, GivenWhenThen}
-import pl.mpieciukiewicz.jdbs.ConnectionPoolFactory
+import pl.mpieciukiewicz.jdbc.ConnectionPoolFactory
 import pl.mpieciukiewicz.scalacqrs.postgresimpl.PostgresUidGenerator
 
 import scala.collection.parallel.{ExecutionContextTaskSupport, ThreadPoolTaskSupport, ForkJoinTaskSupport}

@@ -1,4 +1,4 @@
-package pl.mpieciukiewicz.jdbs
+package pl.mpieciukiewicz.jdbc
 
 import javax.sql.DataSource
 

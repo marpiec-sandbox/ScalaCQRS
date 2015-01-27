@@ -3,10 +3,13 @@ package pl.mpieciukiewicz.domain.user.command
 import pl.mpieciukiewicz.domain.user.event.UserRemovedEvent
 import pl.mpieciukiewicz.scalacqrs._
 
-class DeleteUser(userId: AggregateId, expectedVersion: Int) extends Command {
+import scala.util.{Success, Try}
 
-  def execute(commandId: CommandId, eventStore: EventStore): Unit = {
+class DeleteUser(userId: AggregateId, expectedVersion: Int) extends Command[Try[Boolean]] {
+
+  def execute(commandId: CommandId, eventStore: EventStore): Try[Boolean] = {
     eventStore.addDeletionEvent(commandId, userId, expectedVersion, UserRemovedEvent)
+    Success(true)
   }
   
 }

@@ -5,10 +5,12 @@ import org.scalatest.{FeatureSpec, GivenWhenThen}
 import pl.mpieciukiewicz.domain.user.command.{DeleteUser, ChangeUserAddress, RegisterUser}
 import pl.mpieciukiewicz.domain.user.UserCommandBus
 import pl.mpieciukiewicz.domain.user.entity.{Address, User}
-import pl.mpieciukiewicz.jdbs.ConnectionPoolFactory
+import pl.mpieciukiewicz.jdbc.ConnectionPoolFactory
 import pl.mpieciukiewicz.mpjsons.MPJson
 import pl.mpieciukiewicz.scalacqrs.core.CoreDataStore
 import pl.mpieciukiewicz.scalacqrs.postgresimpl.{PostgresCommandStore, ObjectSerializer, PostgresEventStore, PostgresUidGenerator}
+
+import scala.util.Try
 
 class JsonSerializer extends ObjectSerializer {
 
@@ -41,7 +43,10 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
       When("User is registered")
       val currentUserId = uidGenerator.nextUserId
       val registeredUserId = uidGenerator.nextAggregateId
-      userCommand.submit(uidGenerator.nextCommandId, currentUserId, new RegisterUser(registeredUserId, "Marcin Pieciukiewicz"))
+      val registrationResult: Try[Boolean] = userCommand.submit(uidGenerator.nextCommandId, currentUserId, new RegisterUser(registeredUserId, "Marcin Pieciukiewicz"))
+
+      Then("Registration is successful")
+      assertThat(registrationResult.isSuccess).isTrue
 
       Then("we can get aggregate from dataStore")
       var userAggregate = dataStore.getAggregate(classOf[User], registeredUserId)

@@ -11,7 +11,7 @@ class MemoryCommandStore(clock: Clock) extends CommandStore {
 
   private val commands: mutable.Map[CommandId, CommandRow] = mutable.Map()
 
-  override def addCommand(commandId: CommandId, userId: UserId, command: Command): Unit = {
+  override def addCommand(commandId: CommandId, userId: UserId, command: Command[_]): Unit = {
     if (commands.contains(commandId)) {
       throw new CommandAlreadyExistsException("Command already exists for id " + commandId)
     } else {

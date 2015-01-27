@@ -5,9 +5,10 @@ import pl.mpieciukiewicz.scalacqrs._
 
 class UserCommandBus(commandStore: CommandStore, eventStore: EventStore) extends CommandBus(commandStore) {
 
-  override protected def handleCommand(commandId: CommandId, command: Command) = command match {
+  override protected def handleCommand(commandId: CommandId, command: Command[_]): Any = command match {
     case c: RegisterUser => c.execute(commandId, eventStore)
     case c: ChangeUserAddress => c.execute(commandId, eventStore)
     case c: DeleteUser => c.execute(commandId, eventStore)
   }
+
 }

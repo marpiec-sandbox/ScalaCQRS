@@ -3,10 +3,13 @@ package pl.mpieciukiewicz.domain.user.command
 import pl.mpieciukiewicz.domain.user.event.UserRegisteredEvent
 import pl.mpieciukiewicz.scalacqrs._
 
-class RegisterUser(userId: AggregateId, name: String) extends Command {
+import scala.util.{Success, Try}
 
-  def execute(commandId: CommandId, eventStore: EventStore): Unit = {
+class RegisterUser(userId: AggregateId, name: String) extends Command[Try[Boolean]] {
+
+  def execute(commandId: CommandId, eventStore: EventStore): Try[Boolean] = {
     eventStore.addCreationEvent(commandId, userId, UserRegisteredEvent(name))
+    Success(true)
   }
 
 }
