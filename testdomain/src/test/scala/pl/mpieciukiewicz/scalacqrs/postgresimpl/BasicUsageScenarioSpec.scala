@@ -3,7 +3,7 @@ package pl.mpieciukiewicz.scalacqrs.postgresimpl
 import org.fest.assertions.api.Assertions.assertThat
 import org.scalatest.{FeatureSpec, GivenWhenThen}
 import pl.mpieciukiewicz.scalacqrs.core.CoreDataStore
-import pl.mpieciukiewicz.scalacqrs.jdbc.ConnectionPoolFactory
+import pl.mpieciukiewicz.scalacqrs.postgresimpl.jdbc.ConnectionPoolFactory
 import pl.mpieciukiewicz.user.UserCommandBus
 import pl.mpieciukiewicz.user.command.{ChangeUserAddress, DeleteUser, RegisterUser}
 import pl.mpieciukiewicz.user.entity.{Address, User}
