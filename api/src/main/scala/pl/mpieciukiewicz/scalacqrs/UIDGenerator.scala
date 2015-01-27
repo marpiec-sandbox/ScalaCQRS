@@ -1,5 +1,7 @@
 package pl.mpieciukiewicz.scalacqrs
 
 trait UIDGenerator {
-  def nextUID: UID
+  def nextAggregateId: AggregateId
+  def nextCommandId: CommandId
+  def nextUserId: UserId
 }

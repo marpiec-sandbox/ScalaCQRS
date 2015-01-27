@@ -2,14 +2,15 @@ package pl.mpieciukiewicz.scalacqrs
 
 import org.fest.assertions.api.Assertions.assertThat
 import org.scalatest.{FeatureSpec, GivenWhenThen}
-import pl.mpieciukiewicz.domain.user.UserCommand
+import pl.mpieciukiewicz.domain.user.command.{DeleteUser, ChangeUserAddress, RegisterUser}
+import pl.mpieciukiewicz.domain.user.UserCommandBus
 import pl.mpieciukiewicz.domain.user.entity.{Address, User}
 import pl.mpieciukiewicz.jdbs.ConnectionPoolFactory
 import pl.mpieciukiewicz.mpjsons.MPJson
 import pl.mpieciukiewicz.scalacqrs.core.CoreDataStore
-import pl.mpieciukiewicz.scalacqrs.jdbcimpl.{EventSerializer, JdbcEventStore, JdbcUIDGenerator}
+import pl.mpieciukiewicz.scalacqrs.postgresimpl.{PostgresCommandStore, ObjectSerializer, PostgresEventStore, PostgresUidGenerator}
 
-class JsonSerializer extends EventSerializer {
+class JsonSerializer extends ObjectSerializer {
 
   override def toJson(obj: AnyRef): String = MPJson.serialize(obj)
 
@@ -25,20 +26,22 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
       Given("EvenStore, DataStore and UID generator, and UserService")
 
 
-      val dataSource = ConnectionPoolFactory.createConnectionPool
+      val eventStoreDataSource = ConnectionPoolFactory.createEventStoreConnectionPool
+      val commandStoreDataSource = ConnectionPoolFactory.createCommandStoreConnectionPool
       val serializer = new JsonSerializer
 
 
-      val eventStore = new JdbcEventStore(dataSource, serializer)
+      val eventStore = new PostgresEventStore(eventStoreDataSource, serializer)
+      val commandStore = new PostgresCommandStore(commandStoreDataSource, serializer)
       val dataStore = new CoreDataStore(eventStore)
-      val uidGenerator = new JdbcUIDGenerator(dataSource)
+      val uidGenerator = new PostgresUidGenerator(eventStoreDataSource)
 
-      val userCommand = new UserCommand(eventStore)
+      val userCommand = new UserCommandBus(commandStore, eventStore)
 
       When("User is registered")
-      val currentUserId = uidGenerator.nextUID
-      val registeredUserId = uidGenerator.nextUID
-      userCommand.registerUser(currentUserId, registeredUserId, "Marcin Pieciukiewicz")
+      val currentUserId = uidGenerator.nextUserId
+      val registeredUserId = uidGenerator.nextAggregateId
+      userCommand.submit(uidGenerator.nextCommandId, currentUserId, new RegisterUser(registeredUserId, "Marcin Pieciukiewicz"))
 
       Then("we can get aggregate from dataStore")
       var userAggregate = dataStore.getAggregate(classOf[User], registeredUserId)
@@ -46,7 +49,7 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
 
 
       When("Address is defined for user")
-      userCommand.changeUserAddress(currentUserId, registeredUserId, 1, "Warsaw", "Center", "1")
+      userCommand.submit(uidGenerator.nextCommandId, currentUserId,new ChangeUserAddress(registeredUserId, 1, "Warsaw", "Center", "1"))
 
       Then("we can get modified user from dataStore")
       userAggregate = dataStore.getAggregate(classOf[User], registeredUserId)
@@ -57,7 +60,7 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
       assertThat(userAggregate.aggregateRoot.get).isEqualTo(User("Marcin Pieciukiewicz", None))
 
       When("User is removed")
-      userCommand.removeUser(currentUserId, registeredUserId, 2)
+      userCommand.submit(uidGenerator.nextCommandId, currentUserId, new DeleteUser(registeredUserId, 2))
 
       Then("Will get empty aggregate from dataStore")
       userAggregate = dataStore.getAggregate(classOf[User], registeredUserId)

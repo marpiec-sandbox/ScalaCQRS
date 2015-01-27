@@ -5,7 +5,7 @@ import pl.mpieciukiewicz.scalacqrs.ModificationEvent
 
 case class UserAddressChangedEvent(city: String, street: String, number: String) extends ModificationEvent[User] {
 
-  override def apply(entity: User): User = entity.copy(address = Some(Address(city, street, number)))
+  override def applyEvent(entity: User): User = entity.copy(address = Some(Address(city, street, number)))
 
   override def entityClass: Class[User] = classOf[User]
 

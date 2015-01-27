@@ -7,7 +7,7 @@ import org.postgresql.ds.jdbc4.AbstractJdbc4PoolingDataSource
 
 import org.scalatest.{FeatureSpec, GivenWhenThen}
 import pl.mpieciukiewicz.jdbs.ConnectionPoolFactory
-import pl.mpieciukiewicz.scalacqrs.jdbcimpl.JdbcUIDGenerator
+import pl.mpieciukiewicz.scalacqrs.postgresimpl.PostgresUidGenerator
 
 import scala.collection.parallel.{ExecutionContextTaskSupport, ThreadPoolTaskSupport, ForkJoinTaskSupport}
 import scala.collection.parallel.immutable.{ParRange}
@@ -22,17 +22,17 @@ class MemorySequentialUIDGeneratorSpec extends FeatureSpec with GivenWhenThen {
 
       Given("MemorySequentialGenerator instance")
 
-      val dataSource = ConnectionPoolFactory.createConnectionPool
+      val dataSource = ConnectionPoolFactory.createEventStoreConnectionPool
 
 
-      val generator = new JdbcUIDGenerator(dataSource)
+      val generator = new PostgresUidGenerator(dataSource)
       val generations = 100000
 
       When("Menu UIDs are generated")
 
       val parRange = Range(0, generations).par
       parRange.tasksupport = new ForkJoinTaskSupport(new scala.concurrent.forkjoin.ForkJoinPool(10))
-      val generatedUIDs = parRange.map(el => generator.nextUID).toSet
+      val generatedUIDs = parRange.map(el => generator.nextAggregateId).toSet
 
       Then("Number of unique generated UID is equal to number of generations")
 
@@ -43,7 +43,7 @@ class MemorySequentialUIDGeneratorSpec extends FeatureSpec with GivenWhenThen {
 
   }
 
-  def runInParallel(count: Int)(block: () => Set[UID]): Unit = {
+  def runInParallel(count: Int)(block: () => Set[AggregateId]): Unit = {
 
 
   }

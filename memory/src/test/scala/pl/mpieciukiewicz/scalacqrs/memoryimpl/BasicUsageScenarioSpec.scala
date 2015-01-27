@@ -4,7 +4,8 @@ import java.time.Clock
 
 import org.fest.assertions.api.Assertions.assertThat
 import org.scalatest.{FeatureSpec, GivenWhenThen}
-import pl.mpieciukiewicz.domain.user.UserCommand
+import pl.mpieciukiewicz.domain.user.command.{DeleteUser, ChangeUserAddress, RegisterUser}
+import pl.mpieciukiewicz.domain.user.UserCommandBus
 import pl.mpieciukiewicz.domain.user.entity.{Address, User}
 import pl.mpieciukiewicz.scalacqrs.core.CoreDataStore
 
@@ -17,15 +18,16 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
       Given("EvenStore, DataStore and UID generator, and UserService")
 
       val eventStore = new MemoryEventStore(Clock.systemDefaultZone())
+      val commandStore = new MemoryCommandStore(Clock.systemDefaultZone())
       val dataStore = new CoreDataStore(eventStore)
       val uidGenerator = new MemorySequentialUIDGenerator
 
-      val userCommand = new UserCommand(eventStore)
+      val userCommandBus = new UserCommandBus(commandStore, eventStore)
 
       When("User is registered")
-      val currentUserId = uidGenerator.nextUID
-      val registeredUserId = uidGenerator.nextUID
-      userCommand.registerUser(currentUserId, registeredUserId, "Marcin Pieciukiewicz")
+      val currentUserId = uidGenerator.nextUserId
+      val registeredUserId = uidGenerator.nextAggregateId
+      userCommandBus.submit(uidGenerator.nextCommandId, currentUserId, new RegisterUser(registeredUserId, "Marcin Pieciukiewicz"))
 
       Then("we can get aggregate from dataStore")
       var userAggregate = dataStore.getAggregate(classOf[User], registeredUserId)
@@ -33,7 +35,7 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
 
 
       When("Address is defined for user")
-      userCommand.changeUserAddress(currentUserId, registeredUserId, 1, "Warsaw", "Center", "1")
+      userCommandBus.submit(uidGenerator.nextCommandId, currentUserId, new ChangeUserAddress(registeredUserId, 1, "Warsaw", "Center", "1"))
 
       Then("we can get modified user from dataStore")
       userAggregate = dataStore.getAggregate(classOf[User], registeredUserId)
@@ -44,7 +46,7 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
       assertThat(userAggregate.aggregateRoot.get).isEqualTo(User("Marcin Pieciukiewicz", None))
 
       When("User is removed")
-      userCommand.removeUser(currentUserId, registeredUserId, 2)
+      userCommandBus.submit(uidGenerator.nextCommandId, currentUserId, new DeleteUser(registeredUserId, 2))
 
       Then("Will get empty aggregate from dataStore")
       userAggregate = dataStore.getAggregate(classOf[User], registeredUserId)

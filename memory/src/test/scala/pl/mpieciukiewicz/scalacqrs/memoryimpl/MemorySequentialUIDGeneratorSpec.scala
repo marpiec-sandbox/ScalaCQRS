@@ -2,7 +2,7 @@ package pl.mpieciukiewicz.scalacqrs.memoryimpl
 
 import org.fest.assertions.api.Assertions
 import org.fest.assertions.api.Assertions.assertThat
-import pl.mpieciukiewicz.scalacqrs.UID
+import pl.mpieciukiewicz.scalacqrs.AggregateId$
 
 import scala.collection.parallel.ForkJoinTaskSupport
 import scala.collection.parallel.immutable.ParRange
@@ -25,7 +25,7 @@ class MemorySequentialUIDGeneratorSpec extends FeatureSpec with GivenWhenThen {
 
       val parRange: ParRange = Range(0, generations).par
       parRange.tasksupport = new ForkJoinTaskSupport(new scala.concurrent.forkjoin.ForkJoinPool(10))
-      val generatedUIDs = parRange.map(el => generator.nextUID).toSeq
+      val generatedUIDs = parRange.map(el => generator.nextAggregateId).toSeq
 
 
       Then("Number of unique generated UID is equal to number of generations")
@@ -37,8 +37,5 @@ class MemorySequentialUIDGeneratorSpec extends FeatureSpec with GivenWhenThen {
 
   }
 
-  def runInParallel(count: Int)(block: () => Set[UID]): Unit = {
 
-
-  }
 }

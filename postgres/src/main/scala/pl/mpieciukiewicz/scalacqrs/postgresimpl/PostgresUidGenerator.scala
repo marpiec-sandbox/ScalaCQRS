@@ -1,11 +1,11 @@
-package pl.mpieciukiewicz.scalacqrs.jdbcimpl
+package pl.mpieciukiewicz.scalacqrs.postgresimpl
 
 import java.sql.Connection
 import javax.sql.DataSource
 
-import pl.mpieciukiewicz.scalacqrs.{UID, UIDGenerator}
+import pl.mpieciukiewicz.scalacqrs._
 
-class JdbcUIDGenerator(dbDataSource: DataSource) extends UIDGenerator {
+class PostgresUidGenerator(dbDataSource: DataSource) extends UIDGenerator {
 
   val NEXT_VAL_QUERY = "SELECT NEXTVAL('uids_seq')"
   val SEQUENCE_STEP_QUERY = "SELECT increment_by FROM uids_seq"
@@ -14,8 +14,20 @@ class JdbcUIDGenerator(dbDataSource: DataSource) extends UIDGenerator {
   var previousValue = 0L
   var maximum = 0L
 
-  override def nextUID: UID = synchronized {
-    if(previousValue == maximum) {
+  override def nextAggregateId = synchronized {
+    AggregateId(nextUniqueValue)
+  }
+
+  override def nextCommandId = synchronized {
+    CommandId(nextUniqueValue)
+  }
+
+  override def nextUserId = synchronized {
+    UserId(nextUniqueValue)
+  }
+  
+  private def nextUniqueValue: Long = {
+    if (previousValue == maximum) {
       val connection = dbDataSource.getConnection
       try {
         val resultSet = connection.prepareStatement(NEXT_VAL_QUERY).executeQuery()
@@ -31,8 +43,7 @@ class JdbcUIDGenerator(dbDataSource: DataSource) extends UIDGenerator {
     } else {
       previousValue += 1
     }
-    UID(previousValue)
-
+    previousValue
   }
 
   private def loadSequenceStep(connection: Connection):Long = {

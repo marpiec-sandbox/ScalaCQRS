@@ -1,6 +1,6 @@
-package pl.mpieciukiewicz.scalacqrs.jdbcimpl
+package pl.mpieciukiewicz.scalacqrs.postgresimpl
 
-trait EventSerializer {
+trait ObjectSerializer {
 
   def toJson(obj: AnyRef): String
 

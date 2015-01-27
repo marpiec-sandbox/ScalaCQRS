@@ -1,4 +1,4 @@
 package pl.mpieciukiewicz.scalacqrs
 
 
-case class Aggregate[T](uid: UID, version: Int, aggregateRoot: Option[T])
+case class Aggregate[T](uid: AggregateId, version: Int, aggregateRoot: Option[T])

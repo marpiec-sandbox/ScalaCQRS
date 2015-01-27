@@ -8,12 +8,12 @@ class CoreDataStore(val eventStore: EventStore) extends DataStore {
 
   private val Log = LoggerFactory.getLogger(classOf[CoreDataStore])
 
-  override def getAggregateByVersion[T](aggregateClass: Class[T], uid: UID, version: Int): Aggregate[T] = getAggregateWithOptionalVersion(aggregateClass, uid, Some(version))
+  override def getAggregateByVersion[T](aggregateClass: Class[T], uid: AggregateId, version: Int): Aggregate[T] = getAggregateWithOptionalVersion(aggregateClass, uid, Some(version))
 
-  override def getAggregate[T](aggregateClass: Class[T], uid: UID): Aggregate[T] = getAggregateWithOptionalVersion(aggregateClass, uid, None)
+  override def getAggregate[T](aggregateClass: Class[T], uid: AggregateId): Aggregate[T] = getAggregateWithOptionalVersion(aggregateClass, uid, None)
 
 
-  private def getAggregateWithOptionalVersion[T](aggregateRootClass: Class[T], uid: UID, version: Option[Int]): Aggregate[T] = {
+  private def getAggregateWithOptionalVersion[T](aggregateRootClass: Class[T], uid: AggregateId, version: Option[Int]): Aggregate[T] = {
     val eventRows = if (version.isDefined) {
       if (version.get < 1) {
         throw new IllegalArgumentException("Cannot get aggregates for versions lower than 1")
@@ -34,14 +34,14 @@ class CoreDataStore(val eventStore: EventStore) extends DataStore {
       throw new IllegalStateException("CreatorEvent need to be of version 1, as it always first event for an aggregate. ("+
         creatorEventRow.event.getClass+" has version "+creatorEventRow.version+")")
     }
-    val aggregateRoot = creatorEventRow.event.asInstanceOf[CreationEvent[T]].apply()
+    val aggregateRoot = creatorEventRow.event.asInstanceOf[CreationEvent[T]].applyEvent()
 
     var aggregate = Aggregate(uid, 1, Some(aggregateRoot))
 
     eventRows.tail.foreach((eventRow) => {
       if (eventRow.version == aggregate.version + 1 && aggregate.aggregateRoot.isDefined) {
         aggregate = eventRow.event match {
-          case event: ModificationEvent[T] => Aggregate(aggregate.uid, aggregate.version + 1, Some(event.apply(aggregateRoot)))
+          case event: ModificationEvent[T] => Aggregate(aggregate.uid, aggregate.version + 1, Some(event.applyEvent(aggregateRoot)))
           case event: DeletionEvent[T] => Aggregate(aggregate.uid, aggregate.version + 1, None)
         }
       } else if (aggregate.aggregateRoot.isEmpty) {
