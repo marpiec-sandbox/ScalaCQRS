@@ -1,7 +1,7 @@
 package pl.mpieciukiewicz.user.event
 
 import pl.mpieciukiewicz.user.entity.{Address, User}
-import pl.mpieciukiewicz.postgresimpl.ModificationEvent
+import pl.mpieciukiewicz.scalacqrs.ModificationEvent
 
 case class UserAddressChangedEvent(city: String, street: String, number: String) extends ModificationEvent[User] {
 

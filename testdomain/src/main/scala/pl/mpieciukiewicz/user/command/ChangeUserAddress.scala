@@ -1,7 +1,7 @@
 package pl.mpieciukiewicz.user.command
 
 import pl.mpieciukiewicz.user.event.UserAddressChangedEvent
-import pl.mpieciukiewicz.postgresimpl._
+import pl.mpieciukiewicz.scalacqrs._
 
 import scala.util.{Success, Try}
 

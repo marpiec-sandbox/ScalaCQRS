@@ -1,7 +1,7 @@
 package pl.mpieciukiewicz.user
 
 import pl.mpieciukiewicz.user.command.{DeleteUser, ChangeUserAddress, RegisterUser}
-import pl.mpieciukiewicz.postgresimpl._
+import pl.mpieciukiewicz.scalacqrs._
 
 class UserCommandBus(commandStore: CommandStore, eventStore: EventStore) extends CommandBus(commandStore) {
 

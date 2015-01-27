@@ -1,7 +1,7 @@
 package pl.mpieciukiewicz.user.event
 
 import pl.mpieciukiewicz.user.entity.User
-import pl.mpieciukiewicz.postgresimpl.CreationEvent
+import pl.mpieciukiewicz.scalacqrs.CreationEvent
 
 case class UserRegisteredEvent(name: String) extends CreationEvent[User] {
 
