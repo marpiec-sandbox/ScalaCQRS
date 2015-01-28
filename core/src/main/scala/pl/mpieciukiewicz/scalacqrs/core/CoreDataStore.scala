@@ -59,5 +59,12 @@ class CoreDataStore(val eventStore: EventStore) extends DataStore {
     aggregate
   }
 
+  override def getAllAggregateIds[T](aggregateClass: Class[T]): Seq[AggregateId] = {
+    eventStore.getAllAggregateIds[T](aggregateClass)
+  }
+
+  override def countAllAggregates[T](aggregateClass: Class[T]): Long = {
+    eventStore.countAllAggregates(aggregateClass)
+  }
 
 }

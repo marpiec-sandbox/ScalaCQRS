@@ -8,13 +8,11 @@ CREATE TABLE IF NOT EXISTS events (
   event VARCHAR(10240) NOT NULL);
 
 CREATE TABLE IF NOT EXISTS aggregates (
-  id INT NOT NULL PRIMARY KEY,
-  class VARCHAR(128) NOT NULL,
-  uid BIGINT NOT NULL,
+  uid BIGINT NOT NULL PRIMARY KEY,
+  type VARCHAR(128) NOT NULL,
   version INT NOT NULL);
 
 CREATE SEQUENCE events_seq;
-CREATE SEQUENCE aggregates_seq;
 CREATE SEQUENCE uids_seq INCREMENT BY 100;
 
 CREATE OR REPLACE FUNCTION add_event(command_uid bigint, aggregate_uid bigint, expected_version INT, aggregate_type VARCHAR(128), event_type VARCHAR(128), event VARCHAR(10240))
@@ -26,7 +24,7 @@ BEGIN
  SELECT aggregates.version INTO current_version from aggregates where uid = aggregate_uid;
     IF NOT FOUND THEN
         IF expected_version = 0 THEN
-            INSERT INTO AGGREGATES (id, class, uid, version) VALUES (NEXTVAL('aggregates_seq'), aggregate_type, aggregate_uid, 0);
+            INSERT INTO AGGREGATES (uid, type, version) VALUES (aggregate_uid, aggregate_type, 0);
             current_version := 0;
         ELSE
 	    RAISE EXCEPTION 'aggregate not found, uid %, aggregate_type %', aggregate_uid, aggregate_type;

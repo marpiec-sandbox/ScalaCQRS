@@ -1,8 +1,10 @@
 package pl.mpieciukiewicz.scalacqrs
 
-import pl.mpieciukiewicz.scalacqrs.internal.Event
-
 trait EventStore {
+
+  def countAllAggregates[T](aggregateClass: Class[T]): Long
+
+  def getAllAggregateIds[T](aggregateClass: Class[T]): Seq[AggregateId]
 
   def addCreationEvent[T](commandId: CommandId, newAggregateId: AggregateId, event: CreationEvent[T])
 
@@ -10,10 +12,10 @@ trait EventStore {
 
   def addDeletionEvent[T](commandId: CommandId, aggregateId: AggregateId, expectedVersion: Int, event: DeletionEvent[T])
 
-  def getEventsForAggregate[T](aggregateClass: Class[T], uid: AggregateId): List[EventRow[T]]
+  def getEventsForAggregate[T](aggregateClass: Class[T], uid: AggregateId): Seq[EventRow[T]]
 
-  def getEventsForAggregateFromVersion[T](aggregateClass: Class[T], uid: AggregateId, fromVersion: Int): List[EventRow[T]]
+  def getEventsForAggregateFromVersion[T](aggregateClass: Class[T], uid: AggregateId, fromVersion: Int): Seq[EventRow[T]]
 
-  def getEventsForAggregateToVersion[T](aggregateClass: Class[T], uid: AggregateId, toVersion: Int): List[EventRow[T]]
+  def getEventsForAggregateToVersion[T](aggregateClass: Class[T], uid: AggregateId, toVersion: Int): Seq[EventRow[T]]
 
 }
