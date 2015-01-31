@@ -88,21 +88,21 @@ class PostgresEventStore(dbDataSource: DataSource, serializer: ObjectSerializer)
   }
 
 
-  override def addCreationEvent[T](commandId: CommandId, newAggregateId: AggregateId, event: CreationEvent[T]): Unit =
+  override def addCreationEvent(commandId: CommandId, newAggregateId: AggregateId, event: CreationEvent[_]): Unit =
     addEvent(commandId, newAggregateId, 0, event)
 
-  override def addModificationEvent[T](commandId: CommandId, aggregateId: AggregateId, expectedVersion: Int, event: ModificationEvent[T]): Unit =
+  override def addModificationEvent(commandId: CommandId, aggregateId: AggregateId, expectedVersion: Int, event: ModificationEvent[_]): Unit =
     addEvent(commandId, aggregateId, expectedVersion, event)
 
-  override def addDeletionEvent[T](commandId: CommandId, aggregateId: AggregateId, expectedVersion: Int, event: DeletionEvent[T]): Unit =
+  override def addDeletionEvent(commandId: CommandId, aggregateId: AggregateId, expectedVersion: Int, event: DeletionEvent[_]): Unit =
     addEvent(commandId, aggregateId, expectedVersion, event)
 
-  private def addEvent[T](commandId: CommandId, aggregateId: AggregateId, expectedVersion: Int, event: Event[T]): Unit = {
+  private def addEvent(commandId: CommandId, aggregateId: AggregateId, expectedVersion: Int, event: Event[_]): Unit = {
     executeStatement("SELECT add_event(?, ?, ?, ?, ?, ?);") { statement =>
       statement.setLong(1, commandId.uid)
       statement.setLong(2, aggregateId.uid)
       statement.setInt(3, expectedVersion)
-      statement.setString(4, event.entityClass.getName)
+      statement.setString(4, event.aggregateType.getName)
       statement.setString(5, event.getClass.getName)
       statement.setString(6, serializer.toJson(event))
     }

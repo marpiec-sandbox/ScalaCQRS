@@ -5,6 +5,4 @@ import pl.mpieciukiewicz.scalacqrs.DeletionEvent
 
 case object UserRemovedEvent extends DeletionEvent[User] {
 
-  override def entityClass = classOf[User]
-
 }

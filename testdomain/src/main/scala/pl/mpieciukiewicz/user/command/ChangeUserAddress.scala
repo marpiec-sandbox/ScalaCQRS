@@ -3,13 +3,16 @@ package pl.mpieciukiewicz.user.command
 import pl.mpieciukiewicz.user.event.UserAddressChangedEvent
 import pl.mpieciukiewicz.scalacqrs._
 
-import scala.util.{Success, Try}
 
-class ChangeUserAddress(userId: AggregateId, expectedVersion: Int, city: String, street: String, number: String) extends Command[Try[Boolean]] {
+case class ChangeUserAddress(userId: AggregateId, expectedVersion: Int, city: String, street: String, number: String) extends Command
 
-    def execute(commandId: CommandId, eventStore: EventStore): Try[Boolean] = {
-      eventStore.addModificationEvent(commandId, userId, expectedVersion, UserAddressChangedEvent(city, street, number))
-      Success(true)
-    }
+case class ChangeUserAddressResult(success: Boolean)
 
+class ChangeUserAddressHandler(eventStore: EventStore) extends CommandHandler[ChangeUserAddress, ChangeUserAddressResult] {
+
+  override def handle(commandId: CommandId, command: ChangeUserAddress): ChangeUserAddressResult = {
+    eventStore.addModificationEvent(commandId, command.userId, command.expectedVersion, UserAddressChangedEvent(command.city, command.street, command.number))
+    ChangeUserAddressResult(success = true)
+  }
 }
+

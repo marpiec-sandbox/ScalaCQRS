@@ -13,15 +13,15 @@ class MemoryEventStore(clock: Clock) extends EventStore {
 
   private val eventsByType = mutable.Map[Class[_], mutable.Map[AggregateId, ListBuffer[EventRow[_]]]]()
 
-  override def addCreationEvent[T](commandId: CommandId, newAggregateId: AggregateId, event: CreationEvent[T]): Unit = {
-    val eventsForType = eventsByType.getOrElseUpdate(event.entityClass, new mutable.HashMap[AggregateId, ListBuffer[EventRow[_]]])
+  override def addCreationEvent(commandId: CommandId, newAggregateId: AggregateId, event: CreationEvent[_]): Unit = {
+    val eventsForType = eventsByType.getOrElseUpdate(event.aggregateType, new mutable.HashMap[AggregateId, ListBuffer[EventRow[_]]])
     val eventsForEntity = eventsForType.getOrElseUpdate(newAggregateId, new ListBuffer[EventRow[_]])
     val eventRow = EventRow(commandId, newAggregateId, 1, clock.instant(), event)
     eventsForEntity += eventRow
   }
 
-  override def addModificationEvent[T](commandId: CommandId, aggregateId: AggregateId, expectedVersion: Int, event: ModificationEvent[T]): Unit = {
-      val eventsForType = eventsByType.getOrElse(event.entityClass, mutable.Map())
+  override def addModificationEvent(commandId: CommandId, aggregateId: AggregateId, expectedVersion: Int, event: ModificationEvent[_]): Unit = {
+      val eventsForType = eventsByType.getOrElse(event.aggregateType, mutable.Map())
       val eventsForEntity = eventsForType.getOrElseUpdate(aggregateId, new ListBuffer[EventRow[_]])
       
       if (eventsForEntity.size > expectedVersion) {
@@ -32,8 +32,8 @@ class MemoryEventStore(clock: Clock) extends EventStore {
   }
 
 
-  override def addDeletionEvent[T](commandId: CommandId, aggregateId: AggregateId, expectedVersion: Int, event: DeletionEvent[T]): Unit = {
-    val eventsForType = eventsByType.getOrElse(event.entityClass, mutable.Map())
+  override def addDeletionEvent(commandId: CommandId, aggregateId: AggregateId, expectedVersion: Int, event: DeletionEvent[_]): Unit = {
+    val eventsForType = eventsByType.getOrElse(event.aggregateType, mutable.Map())
     val eventsForEntity = eventsForType.getOrElseUpdate(aggregateId, new ListBuffer[EventRow[_]])
 
     if (eventsForEntity.size > expectedVersion) {

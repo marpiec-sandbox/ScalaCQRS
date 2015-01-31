@@ -14,7 +14,7 @@ class PostgresCommandStore(dbDataSource: DataSource, serializer: ObjectSerialize
     " FROM commands" +
     " WHERE command_uid = ?"
 
-  override def addCommand(commandId: CommandId, userId: UserId, command: Command[_]): Unit = {
+  override def addCommand(commandId: CommandId, userId: UserId, command: Command): Unit = {
     val connection = dbDataSource.getConnection
     val statement = connection.prepareStatement(INSERT_COMMAND)
     statement.setLong(1, commandId.uid)
@@ -45,7 +45,7 @@ class PostgresCommandStore(dbDataSource: DataSource, serializer: ObjectSerialize
         CommandId(resultSet.getLong(1)),
         UserId(resultSet.getLong(2)),
         resultSet.getTimestamp(3).toInstant,
-        serializer.fromJson(resultSet.getString(5), Class.forName(resultSet.getString(4)).asInstanceOf[Class[Command[_]]]))
+        serializer.fromJson(resultSet.getString(5), Class.forName(resultSet.getString(4)).asInstanceOf[Class[Command]]))
       eventsRows ::= commandRow
     }
 

@@ -6,11 +6,11 @@ trait EventStore {
 
   def getAllAggregateIds[T](aggregateClass: Class[T]): Seq[AggregateId]
 
-  def addCreationEvent[T](commandId: CommandId, newAggregateId: AggregateId, event: CreationEvent[T])
+  def addCreationEvent(commandId: CommandId, newAggregateId: AggregateId, event: CreationEvent[_])
 
-  def addModificationEvent[T](commandId: CommandId, aggregateId: AggregateId, expectedVersion: Int, event: ModificationEvent[T])
+  def addModificationEvent(commandId: CommandId, aggregateId: AggregateId, expectedVersion: Int, event: ModificationEvent[_])
 
-  def addDeletionEvent[T](commandId: CommandId, aggregateId: AggregateId, expectedVersion: Int, event: DeletionEvent[T])
+  def addDeletionEvent(commandId: CommandId, aggregateId: AggregateId, expectedVersion: Int, event: DeletionEvent[_])
 
   def getEventsForAggregate[T](aggregateClass: Class[T], uid: AggregateId): Seq[EventRow[T]]
 

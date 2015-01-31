@@ -3,13 +3,13 @@ package pl.mpieciukiewicz.user.command
 import pl.mpieciukiewicz.user.event.UserRegisteredEvent
 import pl.mpieciukiewicz.scalacqrs._
 
-import scala.util.{Success, Try}
+case class RegisterUser(userId: AggregateId, name: String) extends Command
 
-class RegisterUser(userId: AggregateId, name: String) extends Command[Try[Boolean]] {
+case class RegisterUserResult(success: Boolean)
 
-  def execute(commandId: CommandId, eventStore: EventStore): Try[Boolean] = {
-    eventStore.addCreationEvent(commandId, userId, UserRegisteredEvent(name))
-    Success(true)
+class RegisterUserHandler(eventStore: EventStore) extends CommandHandler[RegisterUser, RegisterUserResult] {
+  override def handle(commandId: CommandId, command: RegisterUser): RegisterUserResult = {
+    eventStore.addCreationEvent(commandId, command.userId, UserRegisteredEvent(command.name))
+    RegisterUserResult(success = true)
   }
-
 }

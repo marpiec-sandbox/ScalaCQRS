@@ -7,6 +7,4 @@ case class UserAddressChangedEvent(city: String, street: String, number: String)
 
   override def applyEvent(entity: User): User = entity.copy(address = Some(Address(city, street, number)))
 
-  override def entityClass: Class[User] = classOf[User]
-
 }
