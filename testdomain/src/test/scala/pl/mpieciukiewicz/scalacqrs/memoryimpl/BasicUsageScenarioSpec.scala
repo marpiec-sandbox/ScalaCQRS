@@ -4,6 +4,7 @@ import java.time.Clock
 
 import org.fest.assertions.api.Assertions.assertThat
 import org.scalatest.{FeatureSpec, GivenWhenThen}
+import pl.mpieciukiewicz.scalacqrs.UserId
 import pl.mpieciukiewicz.user.command.{DeleteUser, ChangeUserAddress, RegisterUser}
 import pl.mpieciukiewicz.user.UserCommandBus
 import pl.mpieciukiewicz.user.entity.{Address, User}
@@ -25,7 +26,7 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
       val userCommandBus = new UserCommandBus(commandStore, eventStore)
 
       When("User is registered")
-      val currentUserId = uidGenerator.nextUserId
+      val currentUserId = UserId.fromAggregateId(uidGenerator.nextAggregateId)
       val registeredUserId = uidGenerator.nextAggregateId
       userCommandBus.submit(uidGenerator.nextCommandId, currentUserId, new RegisterUser(registeredUserId, "Marcin Pieciukiewicz"))
 

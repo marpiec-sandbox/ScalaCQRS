@@ -2,6 +2,7 @@ package pl.mpieciukiewicz.scalacqrs.postgresimpl
 
 import org.fest.assertions.api.Assertions.assertThat
 import org.scalatest.{FeatureSpec, GivenWhenThen}
+import pl.mpieciukiewicz.scalacqrs.UserId
 import pl.mpieciukiewicz.scalacqrs.core.CoreDataStore
 import pl.mpieciukiewicz.scalacqrs.postgresimpl.jdbc.ConnectionPoolFactory
 import pl.mpieciukiewicz.user.UserCommandBus
@@ -33,7 +34,7 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
       val userCommand = new UserCommandBus(commandStore, eventStore)
 
       When("User is registered")
-      val currentUserId = uidGenerator.nextUserId
+      val currentUserId = UserId.fromAggregateId(uidGenerator.nextAggregateId)
       val registeredUserId = uidGenerator.nextAggregateId
       val registrationResult: Try[Boolean] = userCommand.submit(uidGenerator.nextCommandId, currentUserId, new RegisterUser(registeredUserId, "Marcin Pieciukiewicz"))
 
