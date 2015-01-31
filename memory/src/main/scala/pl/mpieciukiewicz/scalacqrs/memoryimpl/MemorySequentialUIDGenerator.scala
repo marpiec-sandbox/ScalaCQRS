@@ -6,12 +6,11 @@ import pl.mpieciukiewicz.scalacqrs._
 
 class MemorySequentialUIDGenerator extends UIDGenerator {
 
-  private val uid = new AtomicLong(0L)
+  private val aggregateUid = new AtomicLong(0L)
+  private val commandUid = new AtomicLong(0L)
 
-  override def nextAggregateId = AggregateId(uid.getAndIncrement)
+  override def nextAggregateId = AggregateId(aggregateUid.getAndIncrement)
 
-  override def nextCommandId =  CommandId(uid.getAndIncrement)
-  
-  override def nextUserId =  UserId(uid.getAndIncrement)
+  override def nextCommandId =  CommandId(commandUid.getAndIncrement)
   
 }

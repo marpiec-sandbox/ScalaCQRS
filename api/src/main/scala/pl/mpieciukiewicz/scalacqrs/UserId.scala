@@ -12,6 +12,8 @@ object UserId {
     }
   }
 
+  def fromAggregateId(aggregateId: AggregateId) = UserId(aggregateId.uid)
+
 }
 
 case class UserId(uid: Long) {

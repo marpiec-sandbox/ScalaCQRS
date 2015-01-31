@@ -21,10 +21,6 @@ class PostgresUidGenerator(dbDataSource: DataSource) extends UIDGenerator {
   override def nextCommandId = synchronized {
     CommandId(nextUniqueValue)
   }
-
-  override def nextUserId = synchronized {
-    UserId(nextUniqueValue)
-  }
   
   private def nextUniqueValue: Long = {
     if (previousValue == maximum) {
