@@ -31,12 +31,12 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
       val dataStore = new CoreDataStore(eventStore)
       val uidGenerator = new PostgresUidGenerator(eventStoreDataSource)
 
-      val userCommand = new UserCommandBus(commandStore, eventStore)
+      val userCommand = new UserCommandBus(uidGenerator, commandStore, eventStore)
 
       When("User is registered")
       val currentUserId = UserId.fromAggregateId(uidGenerator.nextAggregateId)
       val registeredUserId = uidGenerator.nextAggregateId
-      val registrationResult: Try[Boolean] = userCommand.submit(uidGenerator.nextCommandId, currentUserId, new RegisterUser(registeredUserId, "Marcin Pieciukiewicz"))
+      val registrationResult: Try[Boolean] = userCommand.submit(currentUserId, new RegisterUser(registeredUserId, "Marcin Pieciukiewicz"))
 
       Then("Registration is successful")
       assertThat(registrationResult.isSuccess).isTrue
@@ -47,7 +47,7 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
 
 
       When("Address is defined for user")
-      userCommand.submit(uidGenerator.nextCommandId, currentUserId, new ChangeUserAddress(registeredUserId, 1, "Warsaw", "Center", "1"))
+      userCommand.submit(currentUserId, new ChangeUserAddress(registeredUserId, 1, "Warsaw", "Center", "1"))
 
       Then("we can get modified user from dataStore")
       userAggregate = dataStore.getAggregate(classOf[User], registeredUserId)
@@ -58,7 +58,7 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
       assertThat(userAggregate.aggregateRoot.get).isEqualTo(User("Marcin Pieciukiewicz", None))
 
       When("User is removed")
-      userCommand.submit(uidGenerator.nextCommandId, currentUserId, new DeleteUser(registeredUserId, 2))
+      userCommand.submit(currentUserId, new DeleteUser(registeredUserId, 2))
 
       Then("Will get empty aggregate from dataStore")
       userAggregate = dataStore.getAggregate(classOf[User], registeredUserId)

@@ -1,10 +1,11 @@
 package pl.mpieciukiewicz.scalacqrs
 
-abstract class CommandBus(commandStore: CommandStore) {
+abstract class CommandBus(uidGenerator: UIDGenerator, commandStore: CommandStore) {
 
-  def submit[R](commandId: CommandId, userId: UserId, command: Command[R]): R = {
-    val result = handleCommand(commandId, command).asInstanceOf[R]
-    commandStore.addCommand(commandId, userId, command)
+  def submit[R](userId: UserId, command: Command[R]): R = {
+    val newCommandId = uidGenerator.nextCommandId
+    val result = handleCommand(newCommandId, command).asInstanceOf[R]
+    commandStore.addCommand(newCommandId, userId, command)
     result
   }
 
