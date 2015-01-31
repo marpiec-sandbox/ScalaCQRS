@@ -1,7 +1,7 @@
 package pl.mpieciukiewicz.user.command
 
-import pl.mpieciukiewicz.user.event.UserRegisteredEvent
 import pl.mpieciukiewicz.scalacqrs._
+import pl.mpieciukiewicz.user.event.UserRegisteredEvent
 
 case class RegisterUser(userId: AggregateId, name: String) extends Command[RegisterUserResult]
 

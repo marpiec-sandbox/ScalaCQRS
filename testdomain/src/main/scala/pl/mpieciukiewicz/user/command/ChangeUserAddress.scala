@@ -1,7 +1,7 @@
 package pl.mpieciukiewicz.user.command
 
-import pl.mpieciukiewicz.user.event.UserAddressChangedEvent
 import pl.mpieciukiewicz.scalacqrs._
+import pl.mpieciukiewicz.user.event.UserAddressChangedEvent
 
 
 case class ChangeUserAddress(userId: AggregateId, expectedVersion: Int, city: String, street: String, number: String) extends Command[ChangeUserAddressResult]
