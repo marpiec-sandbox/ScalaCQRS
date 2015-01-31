@@ -1,6 +1,5 @@
 package pl.mpieciukiewicz.scalacqrs
 
-trait CommandHandler[C <: Command[_], R] {
+abstract class CommandHandler[C <: Command[_], R](val commandType: Class[C]) {
   def handle(commandId: CommandId, command: C): R
-  def commandType: Class[C]
 }

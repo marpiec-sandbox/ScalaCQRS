@@ -2,4 +2,4 @@ package pl.mpieciukiewicz.scalacqrs
 
 import pl.mpieciukiewicz.scalacqrs.internal.Event
 
-trait DeletionEvent[T] extends Event[T]
+abstract class DeletionEvent[T](aggregateType:Class[T]) extends Event[T](aggregateType)

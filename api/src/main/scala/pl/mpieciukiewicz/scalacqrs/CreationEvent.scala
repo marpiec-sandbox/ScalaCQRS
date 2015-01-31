@@ -2,7 +2,7 @@ package pl.mpieciukiewicz.scalacqrs
 
 import pl.mpieciukiewicz.scalacqrs.internal.Event
 
-trait CreationEvent[T] extends Event[T] {
+abstract class CreationEvent[T](aggregateType:Class[T]) extends Event[T](aggregateType) {
 
   def applyEvent(): T
 }

@@ -8,13 +8,11 @@ case class ChangeUserAddress(userId: AggregateId, expectedVersion: Int, city: St
 
 case class ChangeUserAddressResult(success: Boolean)
 
-class ChangeUserAddressHandler(eventStore: EventStore) extends CommandHandler[ChangeUserAddress, ChangeUserAddressResult] {
+class ChangeUserAddressHandler(eventStore: EventStore) extends CommandHandler[ChangeUserAddress, ChangeUserAddressResult](classOf[ChangeUserAddress]) {
 
   override def handle(commandId: CommandId, command: ChangeUserAddress): ChangeUserAddressResult = {
     eventStore.addModificationEvent(commandId, command.userId, command.expectedVersion, UserAddressChangedEvent(command.city, command.street, command.number))
     ChangeUserAddressResult(success = true)
   }
-
-  override def commandType: Class[ChangeUserAddress] = classOf[ChangeUserAddress]
 }
 
