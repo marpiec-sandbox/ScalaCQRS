@@ -5,7 +5,7 @@ import java.time.Clock
 import org.fest.assertions.api.Assertions.assertThat
 import org.scalatest.{FeatureSpec, GivenWhenThen}
 import pl.mpieciukiewicz.scalacqrs.UserId
-import pl.mpieciukiewicz.user.command.{DeleteUser, ChangeUserAddress, RegisterUser}
+import pl.mpieciukiewicz.user.command.{RegisterUserResult, DeleteUser, ChangeUserAddress, RegisterUser}
 import pl.mpieciukiewicz.user.UserCommandBus
 import pl.mpieciukiewicz.user.entity.{Address, User}
 import pl.mpieciukiewicz.scalacqrs.core.CoreDataStore
@@ -28,9 +28,11 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
       When("User is registered")
       val currentUserId = UserId.fromAggregateId(uidGenerator.nextAggregateId)
       val registeredUserId = uidGenerator.nextAggregateId
-      userCommandBus.submit(currentUserId, new RegisterUser(registeredUserId, "Marcin Pieciukiewicz"))
+      val registrationResult = userCommandBus.submit(currentUserId, new RegisterUser(registeredUserId, "Marcin Pieciukiewicz"))
 
       Then("we can get aggregate from dataStore")
+      assertThat(registrationResult.success).isTrue
+
       var userAggregate = dataStore.getAggregate(classOf[User], registeredUserId)
       assertThat(userAggregate.aggregateRoot.get).isEqualTo(User("Marcin Pieciukiewicz", None))
 

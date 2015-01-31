@@ -6,7 +6,7 @@ import pl.mpieciukiewicz.scalacqrs._
 
 import scala.util.{Success, Try}
 
-case class DeleteUser(userId: AggregateId, expectedVersion: Int) extends Command
+case class DeleteUser(userId: AggregateId, expectedVersion: Int) extends Command[DeleteUserResult]
 
 case class DeleteUserResult(success: Boolean)
 
@@ -16,4 +16,6 @@ class DeleteUserHandler(eventStore: EventStore) extends CommandHandler[DeleteUse
     eventStore.addDeletionEvent(commandId, command.userId, command.expectedVersion, UserRemovedEvent)
     DeleteUserResult(success = true)
   }
+
+  override def commandType: Class[DeleteUser] = classOf[DeleteUser]
 }

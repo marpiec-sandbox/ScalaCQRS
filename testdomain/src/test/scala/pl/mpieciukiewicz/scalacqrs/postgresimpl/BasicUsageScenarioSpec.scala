@@ -36,10 +36,10 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
       When("User is registered")
       val currentUserId = UserId.fromAggregateId(uidGenerator.nextAggregateId)
       val registeredUserId = uidGenerator.nextAggregateId
-      val registrationResult: Try[Boolean] = userCommand.submit(currentUserId, new RegisterUser(registeredUserId, "Marcin Pieciukiewicz"))
+      val registrationResult = userCommand.submit(currentUserId, new RegisterUser(registeredUserId, "Marcin Pieciukiewicz"))
 
       Then("Registration is successful")
-      assertThat(registrationResult.isSuccess).isTrue
+      assertThat(registrationResult.success).isTrue
 
       Then("we can get aggregate from dataStore")
       var userAggregate = dataStore.getAggregate(classOf[User], registeredUserId)

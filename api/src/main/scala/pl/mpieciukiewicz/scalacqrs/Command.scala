@@ -1,3 +1,5 @@
 package pl.mpieciukiewicz.scalacqrs
 
-trait Command
+trait Command[R] {
+
+}

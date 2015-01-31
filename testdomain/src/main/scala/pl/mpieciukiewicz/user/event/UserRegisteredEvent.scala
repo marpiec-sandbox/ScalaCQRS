@@ -7,4 +7,5 @@ case class UserRegisteredEvent(name: String) extends CreationEvent[User] {
 
   override def applyEvent(): User = User(name, None)
 
+  override def aggregateType: Class[User] = classOf[User]
 }
