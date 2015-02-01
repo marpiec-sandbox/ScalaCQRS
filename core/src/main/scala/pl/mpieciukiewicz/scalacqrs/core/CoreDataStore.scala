@@ -12,6 +12,11 @@ class CoreDataStore(val eventStore: EventStore) extends DataStore {
 
   override def getAggregate[T](aggregateClass: Class[T], uid: AggregateId): Aggregate[T] = getAggregateWithOptionalVersion(aggregateClass, uid, None)
 
+  override def getAggregates[T](aggregateClass: Class[T], ids: Seq[AggregateId]): Map[AggregateId, Aggregate[T]] = {
+    //TODO for sure optimize for databases
+    val aggregates: Seq[Aggregate[T]] = ids.map(getAggregateWithOptionalVersion(aggregateClass, _, None))
+    ids.zip(aggregates).toMap
+  }
 
   private def getAggregateWithOptionalVersion[T](aggregateRootClass: Class[T], uid: AggregateId, version: Option[Int]): Aggregate[T] = {
     val eventRows = if (version.isDefined) {
@@ -66,5 +71,6 @@ class CoreDataStore(val eventStore: EventStore) extends DataStore {
   override def countAllAggregates[T](aggregateClass: Class[T]): Long = {
     eventStore.countAllAggregates(aggregateClass)
   }
+
 
 }
