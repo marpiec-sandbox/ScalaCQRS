@@ -1,3 +1,3 @@
-package pl.mpieciukiewicz.scalacqrs.internal
+package pl.mpieciukiewicz.scalacqrs
 
 abstract class Event[T](val aggregateType:Class[T])

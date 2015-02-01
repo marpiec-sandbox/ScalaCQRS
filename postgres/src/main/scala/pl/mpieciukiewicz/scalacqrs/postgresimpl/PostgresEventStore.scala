@@ -5,7 +5,6 @@ import java.sql.ResultSet
 import javax.sql.DataSource
 
 import pl.mpieciukiewicz.scalacqrs._
-import pl.mpieciukiewicz.scalacqrs.internal.Event
 
 import scala.collection.mutable.ListBuffer
 
@@ -106,6 +105,7 @@ class PostgresEventStore(dbDataSource: DataSource, serializer: ObjectSerializer)
       statement.setString(5, event.getClass.getName)
       statement.setString(6, serializer.toJson(event))
     }
+    callEventListeners(aggregateId, event)
   }
 
   override def getAllAggregateIds[T](aggregateClass: Class[T]): List[AggregateId] = {

@@ -4,7 +4,6 @@ import java.time.Clock
 
 import pl.mpieciukiewicz.scalacqrs._
 import pl.mpieciukiewicz.scalacqrs.exception.{NoEventsForAggregateException, ConcurrentAggregateModificationException}
-import pl.mpieciukiewicz.scalacqrs.internal.Event
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -13,11 +12,13 @@ class MemoryEventStore(clock: Clock) extends EventStore {
 
   private val eventsByType = mutable.Map[Class[_], mutable.Map[AggregateId, ListBuffer[EventRow[_]]]]()
 
+
   override def addCreationEvent(commandId: CommandId, newAggregateId: AggregateId, event: CreationEvent[_]): Unit = {
     val eventsForType = eventsByType.getOrElseUpdate(event.aggregateType, new mutable.HashMap[AggregateId, ListBuffer[EventRow[_]]])
     val eventsForEntity = eventsForType.getOrElseUpdate(newAggregateId, new ListBuffer[EventRow[_]])
     val eventRow = EventRow(commandId, newAggregateId, 1, clock.instant(), event)
     eventsForEntity += eventRow
+    callEventListeners(newAggregateId, event)
   }
 
   override def addModificationEvent(commandId: CommandId, aggregateId: AggregateId, expectedVersion: Int, event: ModificationEvent[_]): Unit = {
@@ -29,6 +30,7 @@ class MemoryEventStore(clock: Clock) extends EventStore {
       }
 
       eventsForEntity += EventRow(commandId, aggregateId, expectedVersion + 1, clock.instant(), event)
+      callEventListeners(aggregateId, event)
   }
 
 
@@ -41,6 +43,7 @@ class MemoryEventStore(clock: Clock) extends EventStore {
     }
 
     eventsForEntity += EventRow(commandId, aggregateId, expectedVersion + 1, clock.instant(), event)
+    callEventListeners(aggregateId, event)
   }
 
   override def getEventsForAggregate[T](aggregateClass: Class[T], uid: AggregateId): Seq[EventRow[T]] = {
@@ -65,4 +68,6 @@ class MemoryEventStore(clock: Clock) extends EventStore {
   override def countAllAggregates[T](aggregateClass: Class[T]): Long = {
     eventsByType.get(aggregateClass).map(_.size.toLong).getOrElse(0L)
   }
+
+
 }
