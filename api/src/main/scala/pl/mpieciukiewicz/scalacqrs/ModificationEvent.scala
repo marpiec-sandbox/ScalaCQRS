@@ -1,5 +1,5 @@
 package pl.mpieciukiewicz.scalacqrs
 
-abstract class ModificationEvent[T](aggregateType:Class[T]) extends Event[T](aggregateType) {
+abstract class ModificationEvent[T] extends Event[T] {
   def applyEvent(entity: T): T
 }
