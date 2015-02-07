@@ -11,7 +11,7 @@ abstract class CommandBus(uidGenerator: UIDGenerator, commandStore: CommandStore
   def submit[R](userId: UserId, command: Command[R]): R = {
     try {
       val newCommandId = uidGenerator.nextCommandId
-      val result = handlers(command.getClass.asInstanceOf[Class[Command[AnyRef]]]).asInstanceOf[CommandHandler[Command[R], AnyRef]].handle(newCommandId, command)
+      val result = handlers(command.getClass.asInstanceOf[Class[Command[AnyRef]]]).asInstanceOf[CommandHandler[Command[R], R]].handle(newCommandId, command)
       commandStore.addCommand(newCommandId, userId, command)
       result.asInstanceOf[R]
     } catch {
@@ -20,7 +20,7 @@ abstract class CommandBus(uidGenerator: UIDGenerator, commandStore: CommandStore
   }
 
   protected def registerHandler(handler: CommandHandler[_ <: AnyRef, _ <: AnyRef]): Unit = {
-    handlers += handler.commandType.asInstanceOf[Class[Command[AnyRef]]] -> handler.asInstanceOf[CommandHandler[Command[AnyRef], AnyRef]]
+    handlers += handler.commandClass.asInstanceOf[Class[Command[AnyRef]]] -> handler.asInstanceOf[CommandHandler[Command[AnyRef], AnyRef]]
   }
 
 }

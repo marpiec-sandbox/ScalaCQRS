@@ -10,7 +10,7 @@ case class DeleteUser(userId: AggregateId, expectedVersion: Int) extends Command
 
 case class DeleteUserResult(success: Boolean)
 
-class DeleteUserHandler(eventStore: EventStore) extends CommandHandler[DeleteUser, DeleteUserResult](classOf[DeleteUser]) {
+class DeleteUserHandler(eventStore: EventStore) extends CommandHandler[DeleteUser, DeleteUserResult] {
 
   override def handle(commandId: CommandId, command: DeleteUser): DeleteUserResult = {
     eventStore.addEvent(commandId, command.userId, command.expectedVersion, UserRemoved())

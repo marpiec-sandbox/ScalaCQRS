@@ -10,7 +10,7 @@ case class RegisterUser(userId: AggregateId, name: String) extends Command[Regis
 
 case class RegisterUserResult(success: Boolean)
 
-class RegisterUserHandler(eventStore: EventStore) extends CommandHandler[RegisterUser, RegisterUserResult](classOf[RegisterUser]) {
+class RegisterUserHandler(eventStore: EventStore) extends CommandHandler[RegisterUser, RegisterUserResult] {
 
   override def handle(commandId: CommandId, command: RegisterUser): RegisterUserResult = {
     eventStore.addFirstEvent(commandId, command.userId, UserRegistered(command.name))
