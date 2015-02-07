@@ -4,11 +4,12 @@ import java.time.Clock
 
 import org.fest.assertions.api.Assertions.assertThat
 import org.scalatest.{FeatureSpec, GivenWhenThen}
-import pl.mpieciukiewicz.scalacqrs.UserId
+import pl.mpieciukiewicz.scalacqrs.data.UserId
 import pl.mpieciukiewicz.user.command.{RegisterUserResult, DeleteUser, ChangeUserAddress, RegisterUser}
-import pl.mpieciukiewicz.user.UserCommandBus
+import pl.mpieciukiewicz.user.{UserDataStore, UserCommandBus}
 import pl.mpieciukiewicz.user.entity.{Address, User}
 import pl.mpieciukiewicz.scalacqrs.core.CoreDataStore
+import pl.mpieciukiewicz.user.event.{UserAddressChangedEventHandler, UserRegisteredEventHandler}
 
 class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
 
@@ -20,7 +21,8 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
 
       val eventStore = new MemoryEventStore(Clock.systemDefaultZone())
       val commandStore = new MemoryCommandStore(Clock.systemDefaultZone())
-      val dataStore = new CoreDataStore(eventStore)
+      val dataStore = new UserDataStore(eventStore)
+
       val uidGenerator = new MemorySequentialUIDGenerator
 
       val userCommandBus = new UserCommandBus(uidGenerator, commandStore, eventStore)

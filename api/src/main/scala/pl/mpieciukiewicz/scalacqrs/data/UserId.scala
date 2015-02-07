@@ -1,4 +1,6 @@
-package pl.mpieciukiewicz.scalacqrs
+package pl.mpieciukiewicz.scalacqrs.data
+
+import pl.mpieciukiewicz.scalacqrs.data.AggregateId
 
 object UserId {
 

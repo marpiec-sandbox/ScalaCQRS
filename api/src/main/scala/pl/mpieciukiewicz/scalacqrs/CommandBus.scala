@@ -1,5 +1,9 @@
 package pl.mpieciukiewicz.scalacqrs
 
+import pl.mpieciukiewicz.scalacqrs.command.Command
+import pl.mpieciukiewicz.scalacqrs.commandhandler.CommandHandler
+import pl.mpieciukiewicz.scalacqrs.data.UserId
+
 abstract class CommandBus(uidGenerator: UIDGenerator, commandStore: CommandStore) {
 
   private var handlers = Map[Class[Command[AnyRef]], CommandHandler[Command[AnyRef], AnyRef]]()

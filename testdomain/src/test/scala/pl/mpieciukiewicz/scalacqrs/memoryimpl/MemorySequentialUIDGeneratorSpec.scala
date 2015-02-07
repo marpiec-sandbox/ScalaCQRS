@@ -1,8 +1,6 @@
 package pl.mpieciukiewicz.scalacqrs.memoryimpl
 
-import org.fest.assertions.api.Assertions
 import org.fest.assertions.api.Assertions.assertThat
-import pl.mpieciukiewicz.scalacqrs.AggregateId$
 
 import scala.collection.parallel.ForkJoinTaskSupport
 import scala.collection.parallel.immutable.ParRange

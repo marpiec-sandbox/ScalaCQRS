@@ -3,6 +3,8 @@ package pl.mpieciukiewicz.scalacqrs.memoryimpl
 import java.time.Clock
 
 import pl.mpieciukiewicz.scalacqrs._
+import pl.mpieciukiewicz.scalacqrs.command.CommandRow
+import pl.mpieciukiewicz.scalacqrs.data.UserId
 import pl.mpieciukiewicz.scalacqrs.exception.CommandAlreadyExistsException
 
 import scala.collection.mutable

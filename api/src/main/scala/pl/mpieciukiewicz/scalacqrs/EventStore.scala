@@ -1,5 +1,8 @@
 package pl.mpieciukiewicz.scalacqrs
 
+import pl.mpieciukiewicz.scalacqrs.data.AggregateId
+import pl.mpieciukiewicz.scalacqrs.event.{EventRow, Event}
+
 import scala.collection.mutable
 
 trait EventStore {
@@ -10,11 +13,9 @@ trait EventStore {
 
   def getAllAggregateIds[T](aggregateClass: Class[T]): Seq[AggregateId]
 
-  def addCreationEvent(commandId: CommandId, newAggregateId: AggregateId, event: CreationEvent[_])
+  def addFirstEvent(commandId: CommandId, newAggregateId: AggregateId, event: Event[_])
 
-  def addModificationEvent(commandId: CommandId, aggregateId: AggregateId, expectedVersion: Int, event: ModificationEvent[_])
-
-  def addDeletionEvent(commandId: CommandId, aggregateId: AggregateId, expectedVersion: Int, event: DeletionEvent[_])
+  def addEvent(commandId: CommandId, newAggregateId: AggregateId, expectedVersion: Int, event: Event[_])
 
   def getEventsForAggregate[T](aggregateClass: Class[T], uid: AggregateId): Seq[EventRow[T]]
 

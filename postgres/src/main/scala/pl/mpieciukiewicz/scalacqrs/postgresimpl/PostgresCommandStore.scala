@@ -4,6 +4,8 @@ import java.sql.{PreparedStatement, Connection}
 import javax.sql.DataSource
 
 import pl.mpieciukiewicz.scalacqrs._
+import pl.mpieciukiewicz.scalacqrs.command.CommandRow
+import pl.mpieciukiewicz.scalacqrs.data.UserId
 
 class PostgresCommandStore(dbDataSource: DataSource, serializer: ObjectSerializer) extends CommandStore {
 

@@ -1,6 +1,9 @@
-package pl.mpieciukiewicz.scalacqrs
+package pl.mpieciukiewicz.scalacqrs.event
 
 import java.time.Instant
+
+import pl.mpieciukiewicz.scalacqrs.CommandId
+import pl.mpieciukiewicz.scalacqrs.data.AggregateId
 
 
 /**

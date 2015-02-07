@@ -2,7 +2,7 @@ package pl.mpieciukiewicz.scalacqrs.postgresimpl
 
 import org.fest.assertions.api.Assertions.assertThat
 import org.scalatest.{FeatureSpec, GivenWhenThen}
-import pl.mpieciukiewicz.scalacqrs.AggregateId
+import pl.mpieciukiewicz.scalacqrs.data.AggregateId
 import pl.mpieciukiewicz.scalacqrs.postgresimpl.jdbc.ConnectionPoolFactory
 
 import scala.collection.parallel.ForkJoinTaskSupport

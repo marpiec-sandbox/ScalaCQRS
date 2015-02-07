@@ -1,6 +1,12 @@
 package pl.mpieciukiewicz.scalacqrs
 
+import pl.mpieciukiewicz.scalacqrs.data.AggregateId
+import pl.mpieciukiewicz.scalacqrs.event.Event
+import pl.mpieciukiewicz.scalacqrs.eventhandler.EventHandler
+
 trait DataStore {
+
+  def registerHandler[A, E <: Event[A]](eventHandler: EventHandler[A, E])
 
   def countAllAggregates[T](aggregateClass: Class[T]): Long
 

@@ -5,6 +5,8 @@ import java.sql.ResultSet
 import javax.sql.DataSource
 
 import pl.mpieciukiewicz.scalacqrs._
+import pl.mpieciukiewicz.scalacqrs.data.AggregateId
+import pl.mpieciukiewicz.scalacqrs.event.{EventRow, Event}
 
 import scala.collection.mutable.ListBuffer
 
@@ -87,16 +89,11 @@ class PostgresEventStore(dbDataSource: DataSource, serializer: ObjectSerializer)
   }
 
 
-  override def addCreationEvent(commandId: CommandId, newAggregateId: AggregateId, event: CreationEvent[_]): Unit =
+  override def addFirstEvent(commandId: CommandId, newAggregateId: AggregateId, event: Event[_]): Unit =
     addEvent(commandId, newAggregateId, 0, event)
 
-  override def addModificationEvent(commandId: CommandId, aggregateId: AggregateId, expectedVersion: Int, event: ModificationEvent[_]): Unit =
-    addEvent(commandId, aggregateId, expectedVersion, event)
 
-  override def addDeletionEvent(commandId: CommandId, aggregateId: AggregateId, expectedVersion: Int, event: DeletionEvent[_]): Unit =
-    addEvent(commandId, aggregateId, expectedVersion, event)
-
-  private def addEvent(commandId: CommandId, aggregateId: AggregateId, expectedVersion: Int, event: Event[_]): Unit = {
+  override def addEvent(commandId: CommandId, aggregateId: AggregateId, expectedVersion: Int, event: Event[_]): Unit = {
     executeStatement("SELECT add_event(?, ?, ?, ?, ?, ?);") { statement =>
       statement.setLong(1, commandId.uid)
       statement.setLong(2, aggregateId.uid)

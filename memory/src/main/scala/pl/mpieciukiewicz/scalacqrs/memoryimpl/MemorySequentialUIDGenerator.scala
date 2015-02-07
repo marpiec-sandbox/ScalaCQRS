@@ -3,6 +3,7 @@ package pl.mpieciukiewicz.scalacqrs.memoryimpl
 import java.util.concurrent.atomic.AtomicLong
 
 import pl.mpieciukiewicz.scalacqrs._
+import pl.mpieciukiewicz.scalacqrs.data.AggregateId
 
 class MemorySequentialUIDGenerator extends UIDGenerator {
 

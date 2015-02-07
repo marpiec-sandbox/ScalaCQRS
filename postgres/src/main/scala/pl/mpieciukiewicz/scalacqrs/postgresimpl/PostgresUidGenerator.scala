@@ -4,6 +4,7 @@ import java.sql.Connection
 import javax.sql.DataSource
 
 import pl.mpieciukiewicz.scalacqrs._
+import pl.mpieciukiewicz.scalacqrs.data.AggregateId
 
 class PostgresUidGenerator(dbDataSource: DataSource) extends UIDGenerator {
 

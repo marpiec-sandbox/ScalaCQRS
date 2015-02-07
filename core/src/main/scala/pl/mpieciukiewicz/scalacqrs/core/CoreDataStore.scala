@@ -2,11 +2,30 @@ package pl.mpieciukiewicz.scalacqrs.core
 
 import org.slf4j.LoggerFactory
 import pl.mpieciukiewicz.scalacqrs._
+import pl.mpieciukiewicz.scalacqrs.data.AggregateId
+import pl.mpieciukiewicz.scalacqrs.event.{EventRow, Event}
+import pl.mpieciukiewicz.scalacqrs.eventhandler.{EventHandler, CreationEventHandler, DeletionEventHandler, ModificationEventHandler}
 import pl.mpieciukiewicz.scalacqrs.exception.AggregateWasAlreadyDeletedException
+
+import scala.collection.mutable
 
 class CoreDataStore(val eventStore: EventStore) extends DataStore {
 
   private val Log = LoggerFactory.getLogger(classOf[CoreDataStore])
+  
+  private val eventHandlers = mutable.HashMap[Class[_], mutable.HashMap[Class[Event[_]], EventHandler[_, _ <: Event[_]]]]()
+
+  override def registerHandler[A, E <: Event[A]](eventHandler: EventHandler[A, E]): Unit = {
+    val aggregateClass = eventHandler.aggregateClass
+    val eventClass = eventHandler.eventClass.asInstanceOf[Class[Event[_]]]
+    val handlers: mutable.HashMap[Class[Event[_]], EventHandler[_, _ <: Event[_]]] = eventHandlers.getOrElse(aggregateClass, {
+      val aggregateEventHandlers = mutable.HashMap[Class[Event[_]], EventHandler[_, _ <: Event[_]]]()
+      eventHandlers += aggregateClass -> aggregateEventHandlers
+      aggregateEventHandlers
+    })
+    handlers += eventClass -> eventHandler
+  }
+
 
   override def getAggregateByVersion[T](aggregateClass: Class[T], uid: AggregateId, version: Int): Aggregate[T] = getAggregateWithOptionalVersion(aggregateClass, uid, Some(version))
 
@@ -39,15 +58,17 @@ class CoreDataStore(val eventStore: EventStore) extends DataStore {
       throw new IllegalStateException("CreatorEvent need to be of version 1, as it always first event for an aggregate. ("+
         creatorEventRow.event.getClass+" has version "+creatorEventRow.version+")")
     }
-    val aggregateRoot = creatorEventRow.event.asInstanceOf[CreationEvent[T]].applyEvent()
+    val handler: EventHandler[_, _ <: Event[_]] = eventHandlers(creatorEventRow.event.aggregateType)(creatorEventRow.event.getClass.asInstanceOf[Class[Event[_]]])
+    val aggregateRoot = handler.asInstanceOf[CreationEventHandler[T, Event[T]]].handleEvent(creatorEventRow.event)
 
     var aggregate = Aggregate(uid, 1, Some(aggregateRoot))
 
     eventRows.tail.foreach((eventRow) => {
       if (eventRow.version == aggregate.version + 1 && aggregate.aggregateRoot.isDefined) {
-        aggregate = eventRow.event match {
-          case event: ModificationEvent[T] => Aggregate(aggregate.uid, aggregate.version + 1, Some(event.applyEvent(aggregateRoot)))
-          case event: DeletionEvent[T] => Aggregate(aggregate.uid, aggregate.version + 1, None)
+        val handler: EventHandler[_, _ <: Event[_]] = eventHandlers(eventRow.event.aggregateType)(eventRow.event.getClass.asInstanceOf[Class[Event[_]]])
+        aggregate = handler match {
+          case h: ModificationEventHandler[T, Event[T]] => Aggregate(aggregate.uid, aggregate.version + 1, Some(h.handleEvent(aggregate.aggregateRoot.get, eventRow.event)))
+          case h: DeletionEventHandler[T, Event[T]] => Aggregate(aggregate.uid, aggregate.version + 1, None)
         }
       } else if (aggregate.aggregateRoot.isEmpty) {
         throw new AggregateWasAlreadyDeletedException("Unexpected modification of already deleted aggregate")

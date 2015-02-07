@@ -1,7 +1,10 @@
 package pl.mpieciukiewicz.user.command
 
 import pl.mpieciukiewicz.scalacqrs._
-import pl.mpieciukiewicz.user.event.UserAddressChangedEvent
+import pl.mpieciukiewicz.scalacqrs.command.Command
+import pl.mpieciukiewicz.scalacqrs.commandhandler.CommandHandler
+import pl.mpieciukiewicz.scalacqrs.data.AggregateId
+import pl.mpieciukiewicz.user.event.UserAddressChanged
 
 
 case class ChangeUserAddress(userId: AggregateId, expectedVersion: Int, city: String, street: String, number: String) extends Command[ChangeUserAddressResult]
@@ -11,7 +14,7 @@ case class ChangeUserAddressResult(success: Boolean)
 class ChangeUserAddressHandler(eventStore: EventStore) extends CommandHandler[ChangeUserAddress, ChangeUserAddressResult](classOf[ChangeUserAddress]) {
 
   override def handle(commandId: CommandId, command: ChangeUserAddress): ChangeUserAddressResult = {
-    eventStore.addModificationEvent(commandId, command.userId, command.expectedVersion, UserAddressChangedEvent(command.city, command.street, command.number))
+    eventStore.addEvent(commandId, command.userId, command.expectedVersion, UserAddressChanged(command.city, command.street, command.number))
     ChangeUserAddressResult(success = true)
   }
 }

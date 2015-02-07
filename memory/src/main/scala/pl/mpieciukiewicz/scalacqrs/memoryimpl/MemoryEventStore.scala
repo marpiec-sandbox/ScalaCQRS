@@ -3,6 +3,8 @@ package pl.mpieciukiewicz.scalacqrs.memoryimpl
 import java.time.Clock
 
 import pl.mpieciukiewicz.scalacqrs._
+import pl.mpieciukiewicz.scalacqrs.data.AggregateId
+import pl.mpieciukiewicz.scalacqrs.event.{EventRow, Event}
 import pl.mpieciukiewicz.scalacqrs.exception.{NoEventsForAggregateException, ConcurrentAggregateModificationException}
 
 import scala.collection.mutable
@@ -13,7 +15,7 @@ class MemoryEventStore(clock: Clock) extends EventStore {
   private val eventsByType = mutable.Map[Class[_], mutable.Map[AggregateId, ListBuffer[EventRow[_]]]]()
 
 
-  override def addCreationEvent(commandId: CommandId, newAggregateId: AggregateId, event: CreationEvent[_]): Unit = {
+  override def addFirstEvent(commandId: CommandId, newAggregateId: AggregateId, event: Event[_]): Unit = {
     val eventsForType = eventsByType.getOrElseUpdate(event.aggregateType, new mutable.HashMap[AggregateId, ListBuffer[EventRow[_]]])
     val eventsForEntity = eventsForType.getOrElseUpdate(newAggregateId, new ListBuffer[EventRow[_]])
     val eventRow = EventRow(commandId, newAggregateId, 1, clock.instant(), event)
@@ -21,7 +23,7 @@ class MemoryEventStore(clock: Clock) extends EventStore {
     callEventListeners(newAggregateId, event)
   }
 
-  override def addModificationEvent(commandId: CommandId, aggregateId: AggregateId, expectedVersion: Int, event: ModificationEvent[_]): Unit = {
+  override def addEvent(commandId: CommandId, aggregateId: AggregateId, expectedVersion: Int, event: Event[_]): Unit = {
       val eventsForType = eventsByType.getOrElse(event.aggregateType, mutable.Map())
       val eventsForEntity = eventsForType.getOrElseUpdate(aggregateId, new ListBuffer[EventRow[_]])
       
@@ -33,18 +35,6 @@ class MemoryEventStore(clock: Clock) extends EventStore {
       callEventListeners(aggregateId, event)
   }
 
-
-  override def addDeletionEvent(commandId: CommandId, aggregateId: AggregateId, expectedVersion: Int, event: DeletionEvent[_]): Unit = {
-    val eventsForType = eventsByType.getOrElse(event.aggregateType, mutable.Map())
-    val eventsForEntity = eventsForType.getOrElseUpdate(aggregateId, new ListBuffer[EventRow[_]])
-
-    if (eventsForEntity.size > expectedVersion) {
-      throw new ConcurrentAggregateModificationException("Expected version " + expectedVersion + " but is " + eventsForEntity.size)
-    }
-
-    eventsForEntity += EventRow(commandId, aggregateId, expectedVersion + 1, clock.instant(), event)
-    callEventListeners(aggregateId, event)
-  }
 
   override def getEventsForAggregate[T](aggregateClass: Class[T], uid: AggregateId): Seq[EventRow[T]] = {
     eventsByType.

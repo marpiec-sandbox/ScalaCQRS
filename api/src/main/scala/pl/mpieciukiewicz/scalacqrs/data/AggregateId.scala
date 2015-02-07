@@ -1,4 +1,4 @@
-package pl.mpieciukiewicz.scalacqrs
+package pl.mpieciukiewicz.scalacqrs.data
 
 object AggregateId {
 

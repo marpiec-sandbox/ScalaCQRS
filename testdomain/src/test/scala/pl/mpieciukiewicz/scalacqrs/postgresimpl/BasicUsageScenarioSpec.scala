@@ -2,8 +2,8 @@ package pl.mpieciukiewicz.scalacqrs.postgresimpl
 
 import org.fest.assertions.api.Assertions.assertThat
 import org.scalatest.{FeatureSpec, GivenWhenThen}
-import pl.mpieciukiewicz.scalacqrs.UserId
 import pl.mpieciukiewicz.scalacqrs.core.CoreDataStore
+import pl.mpieciukiewicz.scalacqrs.data.UserId
 import pl.mpieciukiewicz.scalacqrs.postgresimpl.jdbc.ConnectionPoolFactory
 import pl.mpieciukiewicz.user.UserCommandBus
 import pl.mpieciukiewicz.user.command.{ChangeUserAddress, DeleteUser, RegisterUser}
