@@ -9,13 +9,13 @@ import pl.mpieciukiewicz.scalacqrs.exception.AggregateWasAlreadyDeletedException
 
 import scala.collection.mutable
 
-class CoreDataStore(val eventStore: EventStore) extends DataStore {
+class CoreDataStore[A](val eventStore: EventStore, aggregateClass: Class[A]) extends DataStore[A] {
 
-  private val Log = LoggerFactory.getLogger(classOf[CoreDataStore])
+  private val Log = LoggerFactory.getLogger(classOf[CoreDataStore[A]])
   
   private val eventHandlers = mutable.HashMap[Class[_], mutable.HashMap[Class[Event[_]], EventHandler[_, _ <: Event[_]]]]()
 
-  override def registerHandler[A, E <: Event[A]](eventHandler: EventHandler[A, E]): Unit = {
+  override def registerHandler[E <: Event[A]](eventHandler: EventHandler[A, E]): Unit = {
     val aggregateClass = eventHandler.aggregateClass
     val eventClass = eventHandler.eventClass.asInstanceOf[Class[Event[_]]]
     val handlers: mutable.HashMap[Class[Event[_]], EventHandler[_, _ <: Event[_]]] = eventHandlers.getOrElse(aggregateClass, {
@@ -27,69 +27,69 @@ class CoreDataStore(val eventStore: EventStore) extends DataStore {
   }
 
 
-  override def getAggregateByVersion[T](aggregateClass: Class[T], uid: AggregateId, version: Int): Aggregate[T] = getAggregateWithOptionalVersion(aggregateClass, uid, Some(version))
+  override def getAggregateByVersion(id: AggregateId, version: Int): Aggregate[A] = getAggregateWithOptionalVersion(id, Some(version))
 
-  override def getAggregate[T](aggregateClass: Class[T], uid: AggregateId): Aggregate[T] = getAggregateWithOptionalVersion(aggregateClass, uid, None)
+  override def getAggregate(id: AggregateId): Aggregate[A] = getAggregateWithOptionalVersion(id, None)
 
-  override def getAggregates[T](aggregateClass: Class[T], ids: Seq[AggregateId]): Map[AggregateId, Aggregate[T]] = {
+  override def getAggregates(ids: Seq[AggregateId]): Map[AggregateId, Aggregate[A]] = {
     //TODO for sure optimize for databases
-    val aggregates: Seq[Aggregate[T]] = ids.map(getAggregateWithOptionalVersion(aggregateClass, _, None))
+    val aggregates: Seq[Aggregate[A]] = ids.map(getAggregateWithOptionalVersion(_, None))
     ids.zip(aggregates).toMap
   }
 
-  private def getAggregateWithOptionalVersion[T](aggregateRootClass: Class[T], uid: AggregateId, version: Option[Int]): Aggregate[T] = {
+  private def getAggregateWithOptionalVersion(id: AggregateId, version: Option[Int]): Aggregate[A] = {
     val eventRows = if (version.isDefined) {
       if (version.get < 1) {
         throw new IllegalArgumentException("Cannot get aggregates for versions lower than 1")
       } else {
-        eventStore.getEventsForAggregateToVersion(aggregateRootClass, uid, version.get)
+        eventStore.getEventsForAggregateToVersion(aggregateClass, id, version.get)
       }
     } else {
-      eventStore.getEventsForAggregate(aggregateRootClass, uid)
+      eventStore.getEventsForAggregate(aggregateClass, id)
     }
 
     if (eventRows.isEmpty) {
-      throw new IllegalStateException("Aggregate of type " + aggregateRootClass + " does not exist.")
+      throw new IllegalStateException("Aggregate of type " + aggregateClass + " does not exist.")
     }
 
 
-    val creatorEventRow: EventRow[T] = eventRows.head
+    val creatorEventRow: EventRow[A] = eventRows.head
     if (creatorEventRow.version != 1) {
       throw new IllegalStateException("CreatorEvent need to be of version 1, as it always first event for an aggregate. ("+
         creatorEventRow.event.getClass+" has version "+creatorEventRow.version+")")
     }
     val handler: EventHandler[_, _ <: Event[_]] = eventHandlers(creatorEventRow.event.aggregateType)(creatorEventRow.event.getClass.asInstanceOf[Class[Event[_]]])
-    val aggregateRoot = handler.asInstanceOf[CreationEventHandler[T, Event[T]]].handleEvent(creatorEventRow.event)
+    val aggregateRoot = handler.asInstanceOf[CreationEventHandler[A, Event[A]]].handleEvent(creatorEventRow.event)
 
-    var aggregate = Aggregate(uid, 1, Some(aggregateRoot))
+    var aggregate = Aggregate(id, 1, Some(aggregateRoot))
 
     eventRows.tail.foreach((eventRow) => {
       if (eventRow.version == aggregate.version + 1 && aggregate.aggregateRoot.isDefined) {
         val handler: EventHandler[_, _ <: Event[_]] = eventHandlers(eventRow.event.aggregateType)(eventRow.event.getClass.asInstanceOf[Class[Event[_]]])
         aggregate = handler match {
-          case h: ModificationEventHandler[T, Event[T]] => Aggregate(aggregate.uid, aggregate.version + 1, Some(h.handleEvent(aggregate.aggregateRoot.get, eventRow.event)))
-          case h: DeletionEventHandler[T, Event[T]] => Aggregate(aggregate.uid, aggregate.version + 1, None)
+          case h: ModificationEventHandler[A, Event[A]] => Aggregate(aggregate.uid, aggregate.version + 1, Some(h.handleEvent(aggregate.aggregateRoot.get, eventRow.event)))
+          case h: DeletionEventHandler[A, Event[A]] => Aggregate(aggregate.uid, aggregate.version + 1, None)
         }
       } else if (aggregate.aggregateRoot.isEmpty) {
         throw new AggregateWasAlreadyDeletedException("Unexpected modification of already deleted aggregate")
       } else {
         throw new IllegalStateException("Unexpected version for aggregate when applying eventRow. " +
-          "[aggregateType:" + aggregateRootClass.getName + ", aggregateId:" + uid + ", aggregateVersion:" +
+          "[aggregateType:" + aggregateClass.getName + ", aggregateId:" + id + ", aggregateVersion:" +
           aggregate.version + ", eventType:" + eventRow.getClass.getName + ", expectedVersion:" + eventRow.version + "]")
       }
     })
 
     if (Log.isDebugEnabled) {
-      Log.debug(eventRows.size + " eventRows applied for aggregate [type:" + aggregateRootClass.getName + ", uid:" + uid + "]")
+      Log.debug(eventRows.size + " eventRows applied for aggregate [type:" + aggregateClass.getName + ", uid:" + id + "]")
     }
     aggregate
   }
 
-  override def getAllAggregateIds[T](aggregateClass: Class[T]): Seq[AggregateId] = {
-    eventStore.getAllAggregateIds[T](aggregateClass)
+  override def getAllAggregateIds(): Seq[AggregateId] = {
+    eventStore.getAllAggregateIds[A](aggregateClass)
   }
 
-  override def countAllAggregates[T](aggregateClass: Class[T]): Long = {
+  override def countAllAggregates(): Long = {
     eventStore.countAllAggregates(aggregateClass)
   }
 

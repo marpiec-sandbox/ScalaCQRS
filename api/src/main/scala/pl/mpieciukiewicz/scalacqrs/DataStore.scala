@@ -4,17 +4,17 @@ import pl.mpieciukiewicz.scalacqrs.data.AggregateId
 import pl.mpieciukiewicz.scalacqrs.event.Event
 import pl.mpieciukiewicz.scalacqrs.eventhandler.EventHandler
 
-trait DataStore {
+trait DataStore[A] {
 
-  def registerHandler[A, E <: Event[A]](eventHandler: EventHandler[A, E])
+  def registerHandler[E <: Event[A]](eventHandler: EventHandler[A, E])
 
-  def countAllAggregates[T](aggregateClass: Class[T]): Long
+  def countAllAggregates(): Long
 
-  def getAllAggregateIds[T](aggregateClass: Class[T]):Seq[AggregateId]
+  def getAllAggregateIds():Seq[AggregateId]
 
-  def getAggregate[T](aggregateClass: Class[T], id: AggregateId): Aggregate[T]
+  def getAggregate(id: AggregateId): Aggregate[A]
 
-  def getAggregates[T](aggregateClass: Class[T], ids: Seq[AggregateId]): Map[AggregateId, Aggregate[T]]
+  def getAggregates(ids: Seq[AggregateId]): Map[AggregateId, Aggregate[A]]
 
-  def getAggregateByVersion[T](aggregateClass: Class[T], uid: AggregateId, version: Int): Aggregate[T]
+  def getAggregateByVersion(id: AggregateId, version: Int): Aggregate[A]
 }

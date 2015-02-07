@@ -21,7 +21,7 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
 
       val eventStore = new MemoryEventStore(Clock.systemDefaultZone())
       val commandStore = new MemoryCommandStore(Clock.systemDefaultZone())
-      val dataStore = new UserDataStore(eventStore)
+      val userDataStore = new UserDataStore(eventStore)
 
       val uidGenerator = new MemorySequentialUIDGenerator
 
@@ -32,33 +32,33 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
       val registeredUserId = uidGenerator.nextAggregateId
       val registrationResult = userCommandBus.submit(currentUserId, new RegisterUser(registeredUserId, "Marcin Pieciukiewicz"))
 
-      Then("we can get aggregate from dataStore")
+      Then("we can get aggregate from userDataStore")
       assertThat(registrationResult.success).isTrue
 
-      var userAggregate = dataStore.getAggregate(classOf[User], registeredUserId)
+      var userAggregate = userDataStore.getAggregate(registeredUserId)
       assertThat(userAggregate.aggregateRoot.get).isEqualTo(User("Marcin Pieciukiewicz", None))
 
 
       When("Address is defined for user")
       userCommandBus.submit(currentUserId, new ChangeUserAddress(registeredUserId, 1, "Warsaw", "Center", "1"))
 
-      Then("we can get modified user from dataStore")
-      userAggregate = dataStore.getAggregate(classOf[User], registeredUserId)
+      Then("we can get modified user from userDataStore")
+      userAggregate = userDataStore.getAggregate(registeredUserId)
       assertThat(userAggregate.aggregateRoot.get).isEqualTo(User("Marcin Pieciukiewicz", Some(Address("Warsaw", "Center", "1"))))
 
-      Then("also we can get previous version of user from dataStore")
-      userAggregate = dataStore.getAggregateByVersion(classOf[User], registeredUserId, 1)
+      Then("also we can get previous version of user from userDataStore")
+      userAggregate = userDataStore.getAggregateByVersion(registeredUserId, 1)
       assertThat(userAggregate.aggregateRoot.get).isEqualTo(User("Marcin Pieciukiewicz", None))
 
       When("User is removed")
       userCommandBus.submit(currentUserId, new DeleteUser(registeredUserId, 2))
 
-      Then("Will get empty aggregate from dataStore")
-      userAggregate = dataStore.getAggregate(classOf[User], registeredUserId)
+      Then("Will get empty aggregate from userDataStore")
+      userAggregate = userDataStore.getAggregate(registeredUserId)
       assertThat(userAggregate.aggregateRoot.isEmpty).isTrue
 
       Then("Also we can get previous version of user, before deletion")
-      userAggregate = dataStore.getAggregateByVersion(classOf[User], registeredUserId, 2)
+      userAggregate = userDataStore.getAggregateByVersion(registeredUserId, 2)
       assertThat(userAggregate.aggregateRoot.get).isEqualTo(User("Marcin Pieciukiewicz", Some(Address("Warsaw", "Center", "1"))))
 
 
