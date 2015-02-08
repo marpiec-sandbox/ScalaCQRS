@@ -1,7 +1,10 @@
 package pl.mpieciukiewicz.scalacqrs.postgresimpl
 
+import javax.sql.DataSource
+
+import org.apache.commons.dbcp2.BasicDataSource
 import org.fest.assertions.api.Assertions.assertThat
-import org.scalatest.{FeatureSpec, GivenWhenThen}
+import org.scalatest.{FeatureSpec, GivenWhenThen, BeforeAndAfter}
 import pl.mpieciukiewicz.scalacqrs.data.UserId
 import pl.mpieciukiewicz.scalacqrs.postgresimpl.jdbc.ConnectionPoolFactory
 import pl.mpieciukiewicz.user.api.command.{ChangeUserAddress, DeleteUser, RegisterUser}
@@ -9,7 +12,20 @@ import pl.mpieciukiewicz.user.api.model.{Address, User}
 import pl.mpieciukiewicz.user.{UserCommandBus, UserDataStore}
 
 
-class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
+class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen with BeforeAndAfter {
+
+  var eventStoreDataSource:BasicDataSource = null
+  var commandStoreDataSource: BasicDataSource = null
+
+  before {
+    eventStoreDataSource = ConnectionPoolFactory.createEventStoreConnectionPool
+    commandStoreDataSource = ConnectionPoolFactory.createCommandStoreConnectionPool
+  }
+
+  after {
+    eventStoreDataSource.close()
+    commandStoreDataSource.close()
+  }
 
   feature("Aggregate storing and getting with event sourcing") {
 
@@ -18,8 +34,7 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
       Given("EvenStore, DataStore and UID generator, and UserService")
 
 
-      val eventStoreDataSource = ConnectionPoolFactory.createEventStoreConnectionPool
-      val commandStoreDataSource = ConnectionPoolFactory.createCommandStoreConnectionPool
+
       val serializer = new JsonSerializer
 
 

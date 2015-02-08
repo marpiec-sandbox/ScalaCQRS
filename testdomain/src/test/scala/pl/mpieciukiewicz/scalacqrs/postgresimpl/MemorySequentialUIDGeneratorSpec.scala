@@ -1,14 +1,25 @@
 package pl.mpieciukiewicz.scalacqrs.postgresimpl
 
+import org.apache.commons.dbcp2.BasicDataSource
 import org.fest.assertions.api.Assertions.assertThat
-import org.scalatest.{FeatureSpec, GivenWhenThen}
+import org.scalatest.{BeforeAndAfter, FeatureSpec, GivenWhenThen}
 import pl.mpieciukiewicz.scalacqrs.data.AggregateId
 import pl.mpieciukiewicz.scalacqrs.postgresimpl.jdbc.ConnectionPoolFactory
 
 import scala.collection.parallel.ForkJoinTaskSupport
 
-class MemorySequentialUIDGeneratorSpec extends FeatureSpec with GivenWhenThen {
+class MemorySequentialUIDGeneratorSpec extends FeatureSpec with GivenWhenThen with BeforeAndAfter {
 
+
+  var eventStoreDataSource:BasicDataSource = null
+
+  before {
+    eventStoreDataSource = ConnectionPoolFactory.createEventStoreConnectionPool
+  }
+
+  after {
+    eventStoreDataSource.close()
+  }
 
   feature("Generation of sequential unique identifiers") {
 
@@ -16,10 +27,7 @@ class MemorySequentialUIDGeneratorSpec extends FeatureSpec with GivenWhenThen {
 
       Given("MemorySequentialGenerator instance")
 
-      val dataSource = ConnectionPoolFactory.createEventStoreConnectionPool
-
-
-      val generator = new PostgresUidGenerator(dataSource)
+      val generator = new PostgresUidGenerator(eventStoreDataSource)
       val generations = 100000
 
       When("Menu UIDs are generated")
