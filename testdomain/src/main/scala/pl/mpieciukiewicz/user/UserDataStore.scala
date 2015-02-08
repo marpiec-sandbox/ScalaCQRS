@@ -5,10 +5,6 @@ import pl.mpieciukiewicz.scalacqrs.core.CoreDataStore
 import pl.mpieciukiewicz.user.entity.User
 import pl.mpieciukiewicz.user.event._
 
-class UserDataStore(eventStore: EventStore) extends CoreDataStore(eventStore, classOf[User]){
-
-  registerHandler(UserRegisteredEventHandler)
-  registerHandler(UserAddressChangedEventHandler)
-  registerHandler(UserRemovedEventHandler)
-
-}
+class UserDataStore(eventStore: EventStore)
+  extends CoreDataStore(eventStore, classOf[User],
+    Array(UserRegisteredEventHandler, UserAddressChangedEventHandler, UserRemovedEventHandler))

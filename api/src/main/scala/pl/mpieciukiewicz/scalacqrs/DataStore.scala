@@ -6,8 +6,6 @@ import pl.mpieciukiewicz.scalacqrs.eventhandler.EventHandler
 
 trait DataStore[A] {
 
-  def registerHandler[E <: Event[A]](eventHandler: EventHandler[A, E])
-
   def countAllAggregates(): Long
 
   def getAllAggregateIds():Seq[AggregateId]

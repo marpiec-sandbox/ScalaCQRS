@@ -9,17 +9,19 @@ import pl.mpieciukiewicz.scalacqrs.exception.AggregateWasAlreadyDeletedException
 
 import scala.collection.mutable
 
-class CoreDataStore[A](val eventStore: EventStore, aggregateClass: Class[A]) extends DataStore[A] {
+class CoreDataStore[A](val eventStore: EventStore, aggregateClass: Class[A], handlers: Seq[EventHandler[A, _ <: Event[A]]]) extends DataStore[A] {
 
   private val Log = LoggerFactory.getLogger(classOf[CoreDataStore[A]])
   
-  private val eventHandlers = mutable.HashMap[Class[_], mutable.HashMap[Class[Event[_]], EventHandler[_, _ <: Event[_]]]]()
+  private val eventHandlers = mutable.HashMap[Class[A], mutable.HashMap[Class[Event[A]], EventHandler[A, _ <: Event[A]]]]()
 
-  override def registerHandler[E <: Event[A]](eventHandler: EventHandler[A, E]): Unit = {
-    val aggregateClass = eventHandler.aggregateClass
-    val eventClass = eventHandler.eventClass.asInstanceOf[Class[Event[_]]]
-    val handlers: mutable.HashMap[Class[Event[_]], EventHandler[_, _ <: Event[_]]] = eventHandlers.getOrElse(aggregateClass, {
-      val aggregateEventHandlers = mutable.HashMap[Class[Event[_]], EventHandler[_, _ <: Event[_]]]()
+  handlers.foreach(registerHandler)
+
+
+  private def registerHandler(eventHandler: EventHandler[A, _ <: Event[A]]): Unit = {
+    val eventClass = eventHandler.eventClass.asInstanceOf[Class[Event[A]]]
+    val handlers = eventHandlers.getOrElse(aggregateClass, {
+      val aggregateEventHandlers = mutable.HashMap[Class[Event[A]], EventHandler[A, _ <: Event[A]]]()
       eventHandlers += aggregateClass -> aggregateEventHandlers
       aggregateEventHandlers
     })
@@ -58,14 +60,14 @@ class CoreDataStore[A](val eventStore: EventStore, aggregateClass: Class[A]) ext
       throw new IllegalStateException("CreatorEvent need to be of version 1, as it always first event for an aggregate. ("+
         creatorEventRow.event.getClass+" has version "+creatorEventRow.version+")")
     }
-    val handler: EventHandler[_, _ <: Event[_]] = eventHandlers(creatorEventRow.event.aggregateType)(creatorEventRow.event.getClass.asInstanceOf[Class[Event[_]]])
+    val handler: EventHandler[A, _] = eventHandlers(creatorEventRow.event.aggregateType)(creatorEventRow.event.getClass.asInstanceOf[Class[Event[A]]])
     val aggregateRoot = handler.asInstanceOf[CreationEventHandler[A, Event[A]]].handleEvent(creatorEventRow.event)
 
     var aggregate = Aggregate(id, 1, Some(aggregateRoot))
 
     eventRows.tail.foreach((eventRow) => {
       if (eventRow.version == aggregate.version + 1 && aggregate.aggregateRoot.isDefined) {
-        val handler: EventHandler[_, _ <: Event[_]] = eventHandlers(eventRow.event.aggregateType)(eventRow.event.getClass.asInstanceOf[Class[Event[_]]])
+        val handler: EventHandler[A, _] = eventHandlers(eventRow.event.aggregateType)(eventRow.event.getClass.asInstanceOf[Class[Event[A]]])
         aggregate = handler match {
           case h: ModificationEventHandler[A, Event[A]] => Aggregate(aggregate.uid, aggregate.version + 1, Some(h.handleEvent(aggregate.aggregateRoot.get, eventRow.event)))
           case h: DeletionEventHandler[A, Event[A]] => Aggregate(aggregate.uid, aggregate.version + 1, None)
