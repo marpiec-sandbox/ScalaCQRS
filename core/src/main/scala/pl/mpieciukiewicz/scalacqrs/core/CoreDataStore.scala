@@ -1,21 +1,30 @@
 package pl.mpieciukiewicz.scalacqrs.core
 
+import java.lang.reflect.Type
+
 import org.slf4j.LoggerFactory
 import pl.mpieciukiewicz.scalacqrs._
 import pl.mpieciukiewicz.scalacqrs.data.AggregateId
 import pl.mpieciukiewicz.scalacqrs.event.{EventRow, Event}
 import pl.mpieciukiewicz.scalacqrs.eventhandler.{EventHandler, CreationEventHandler, DeletionEventHandler, ModificationEventHandler}
 import pl.mpieciukiewicz.scalacqrs.exception.AggregateWasAlreadyDeletedException
+import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl
 
 import scala.collection.mutable
 
-class CoreDataStore[A](val eventStore: EventStore, aggregateClass: Class[A], handlers: Seq[EventHandler[A, _ <: Event[A]]]) extends DataStore[A] {
+abstract class CoreDataStore[A](val eventStore: EventStore, handlers: Seq[EventHandler[A, _ <: Event[A]]]) extends DataStore[A] {
 
   private val Log = LoggerFactory.getLogger(classOf[CoreDataStore[A]])
   
   private val eventHandlers = mutable.HashMap[Class[A], mutable.HashMap[Class[Event[A]], EventHandler[A, _ <: Event[A]]]]()
 
+  val aggregateClass: Class[A] = {
+    val arguments: Array[Type] = this.getClass.getGenericSuperclass.asInstanceOf[ParameterizedTypeImpl].getActualTypeArguments
+    arguments(0).asInstanceOf[Class[A]]
+  }
+
   handlers.foreach(registerHandler)
+
 
 
   private def registerHandler(eventHandler: EventHandler[A, _ <: Event[A]]): Unit = {
