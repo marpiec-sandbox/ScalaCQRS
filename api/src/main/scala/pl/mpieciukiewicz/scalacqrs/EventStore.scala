@@ -30,6 +30,6 @@ trait EventStore {
 
   protected def callEventListeners[T](aggregateId: AggregateId, event: Event[T]): Unit = {
     val eventListenersForType = eventListeners.getOrElse(event.aggregateType, mutable.ListBuffer())
-    eventListenersForType.asInstanceOf[mutable.ListBuffer[EventListener[T]]].foreach(_.onEvent(AggregateUpdated(aggregateId, event)))
+    eventListenersForType.asInstanceOf[mutable.ListBuffer[AggregateUpdated[T] => Unit]].foreach(_.apply(AggregateUpdated(aggregateId, event)))
   }
 }
