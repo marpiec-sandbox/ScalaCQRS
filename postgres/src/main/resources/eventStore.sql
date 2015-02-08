@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS aggregates (
   version INT NOT NULL);
 
 CREATE SEQUENCE events_seq;
-CREATE SEQUENCE uids_seq INCREMENT BY 100;
+CREATE SEQUENCE uids_seq INCREMENT BY 100 START 1000;
 
 CREATE OR REPLACE FUNCTION add_event(command_uid bigint, aggregate_uid bigint, expected_version INT, aggregate_type VARCHAR(128), event_type VARCHAR(128), event VARCHAR(10240))
 RETURNS void AS
