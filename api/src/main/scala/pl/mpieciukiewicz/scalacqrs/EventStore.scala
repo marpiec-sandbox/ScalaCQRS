@@ -7,7 +7,7 @@ import scala.collection.mutable
 
 trait EventStore {
 
-  private val eventListeners = mutable.Map[Class[_], mutable.ListBuffer[EventListener[_]]]()
+  private val eventListeners = mutable.Map[Class[_], mutable.ListBuffer[AggregateUpdated[_] => Unit]]()
 
   def countAllAggregates[T](aggregateClass: Class[T]): Long
 
@@ -23,9 +23,9 @@ trait EventStore {
 
   def getEventsForAggregateToVersion[T](aggregateClass: Class[T], uid: AggregateId, toVersion: Int): Seq[EventRow[T]]
 
-  def addEventListener[T](aggregateClass: Class[T], eventListener: EventListener[T]): Unit = {
+  def addEventListener[T](aggregateClass: Class[T], eventListener: AggregateUpdated[T] => Unit): Unit = {
     val eventListenersForType = eventListeners.getOrElseUpdate(aggregateClass, mutable.ListBuffer())
-    eventListenersForType += eventListener
+    eventListenersForType += eventListener.asInstanceOf[AggregateUpdated[_] => Unit]
   }
 
   protected def callEventListeners[T](aggregateId: AggregateId, event: Event[T]): Unit = {
