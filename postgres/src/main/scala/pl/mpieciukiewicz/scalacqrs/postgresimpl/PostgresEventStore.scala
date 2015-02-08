@@ -94,13 +94,14 @@ class PostgresEventStore(dbDataSource: DataSource, serializer: ObjectSerializer)
 
 
   override def addEvent(commandId: CommandId, aggregateId: AggregateId, expectedVersion: Int, event: Event[_]): Unit = {
-    executeStatement("SELECT add_event(?, ?, ?, ?, ?, ?);") { statement =>
+    executeStatement("SELECT add_event(?, ?, ?, ?, ?, ?, ?);") { statement =>
       statement.setLong(1, commandId.uid)
       statement.setLong(2, aggregateId.uid)
       statement.setInt(3, expectedVersion)
       statement.setString(4, event.aggregateType.getName)
       statement.setString(5, event.getClass.getName)
-      statement.setString(6, serializer.toJson(event))
+      statement.setInt(6, 0)
+      statement.setString(7, serializer.toJson(event))
     }
     callEventListeners(aggregateId, event)
   }
