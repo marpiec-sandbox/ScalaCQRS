@@ -2,14 +2,11 @@ package pl.mpieciukiewicz.scalacqrs.postgresimpl
 
 import org.fest.assertions.api.Assertions.assertThat
 import org.scalatest.{FeatureSpec, GivenWhenThen}
-import pl.mpieciukiewicz.scalacqrs.core.CoreDataStore
 import pl.mpieciukiewicz.scalacqrs.data.UserId
 import pl.mpieciukiewicz.scalacqrs.postgresimpl.jdbc.ConnectionPoolFactory
-import pl.mpieciukiewicz.user.{UserDataStore, UserCommandBus}
-import pl.mpieciukiewicz.user.command.{ChangeUserAddress, DeleteUser, RegisterUser}
-import pl.mpieciukiewicz.user.entity.{Address, User}
-
-import scala.util.Try
+import pl.mpieciukiewicz.user.api.command.{ChangeUserAddress, DeleteUser, RegisterUser}
+import pl.mpieciukiewicz.user.api.model.{Address, User}
+import pl.mpieciukiewicz.user.{UserCommandBus, UserDataStore}
 
 
 class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {

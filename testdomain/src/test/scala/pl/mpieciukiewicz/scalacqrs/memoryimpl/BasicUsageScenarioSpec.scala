@@ -5,11 +5,11 @@ import java.time.Clock
 import org.fest.assertions.api.Assertions.assertThat
 import org.scalatest.{FeatureSpec, GivenWhenThen}
 import pl.mpieciukiewicz.scalacqrs.data.UserId
-import pl.mpieciukiewicz.user.command.{RegisterUserResult, DeleteUser, ChangeUserAddress, RegisterUser}
+import pl.mpieciukiewicz.user.api.command.{RegisterUser, DeleteUser, ChangeUserAddress}
+import pl.mpieciukiewicz.user.api.model.{User, Address}
 import pl.mpieciukiewicz.user.{UserDataStore, UserCommandBus}
-import pl.mpieciukiewicz.user.entity.{Address, User}
 import pl.mpieciukiewicz.scalacqrs.core.CoreDataStore
-import pl.mpieciukiewicz.user.event.{UserAddressChangedEventHandler, UserRegisteredEventHandler}
+import pl.mpieciukiewicz.user.eventhandler.{UserAddressChangedEventHandler, UserRegisteredEventHandler}
 
 class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
 

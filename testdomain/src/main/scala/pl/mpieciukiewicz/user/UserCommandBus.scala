@@ -1,7 +1,7 @@
 package pl.mpieciukiewicz.user
 
-import pl.mpieciukiewicz.user.command._
 import pl.mpieciukiewicz.scalacqrs._
+import pl.mpieciukiewicz.user.commandhandler._
 
 class UserCommandBus(uidGenerator: UIDGenerator, commandStore: CommandStore, eventStore: EventStore)
   extends CommandBus(uidGenerator, commandStore,

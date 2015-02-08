@@ -1,7 +1,8 @@
-package pl.mpieciukiewicz.user.event
+package pl.mpieciukiewicz.user.eventhandler
 
 import pl.mpieciukiewicz.scalacqrs.eventhandler.ModificationEventHandler
-import pl.mpieciukiewicz.user.entity.{Address, User}
+import pl.mpieciukiewicz.user.api.event.UserAddressChanged
+import pl.mpieciukiewicz.user.api.model.{Address, User}
 
 object UserAddressChangedEventHandler extends ModificationEventHandler[User, UserAddressChanged] {
 

@@ -1,14 +1,9 @@
-package pl.mpieciukiewicz.user.command
+package pl.mpieciukiewicz.user.commandhandler
 
 import pl.mpieciukiewicz.scalacqrs._
-import pl.mpieciukiewicz.scalacqrs.command.Command
 import pl.mpieciukiewicz.scalacqrs.commandhandler.CommandHandler
-import pl.mpieciukiewicz.scalacqrs.data.AggregateId
-import pl.mpieciukiewicz.user.event.UserRemoved
-
-case class DeleteUser(userId: AggregateId, expectedVersion: Int) extends Command[DeleteUserResult]
-
-case class DeleteUserResult(success: Boolean)
+import pl.mpieciukiewicz.user.api.command.{DeleteUser, DeleteUserResult}
+import pl.mpieciukiewicz.user.api.event.UserRemoved
 
 class DeleteUserHandler(eventStore: EventStore) extends CommandHandler[DeleteUser, DeleteUserResult] {
 

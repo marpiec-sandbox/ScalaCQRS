@@ -1,14 +1,10 @@
-package pl.mpieciukiewicz.user.command
+package pl.mpieciukiewicz.user.commandhandler
 
 import pl.mpieciukiewicz.scalacqrs._
-import pl.mpieciukiewicz.scalacqrs.command.Command
 import pl.mpieciukiewicz.scalacqrs.commandhandler.CommandHandler
-import pl.mpieciukiewicz.scalacqrs.data.AggregateId
-import pl.mpieciukiewicz.user.event.UserRegistered
+import pl.mpieciukiewicz.user.api.command.{RegisterUser, RegisterUserResult}
+import pl.mpieciukiewicz.user.api.event.UserRegistered
 
-case class RegisterUser(userId: AggregateId, name: String) extends Command[RegisterUserResult]
-
-case class RegisterUserResult(success: Boolean)
 
 class RegisterUserHandler(eventStore: EventStore) extends CommandHandler[RegisterUser, RegisterUserResult] {
 
