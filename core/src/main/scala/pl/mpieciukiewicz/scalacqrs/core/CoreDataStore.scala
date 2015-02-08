@@ -69,8 +69,8 @@ class CoreDataStore[A](val eventStore: EventStore, aggregateClass: Class[A], han
       if (eventRow.version == aggregate.version + 1 && aggregate.aggregateRoot.isDefined) {
         val handler: EventHandler[A, _] = eventHandlers(eventRow.event.aggregateType)(eventRow.event.getClass.asInstanceOf[Class[Event[A]]])
         aggregate = handler match {
-          case h: ModificationEventHandler[A, Event[A]] => Aggregate(aggregate.uid, aggregate.version + 1, Some(h.handleEvent(aggregate.aggregateRoot.get, eventRow.event)))
-          case h: DeletionEventHandler[A, Event[A]] => Aggregate(aggregate.uid, aggregate.version + 1, None)
+          case h: ModificationEventHandler[A, _] => Aggregate(aggregate.uid, aggregate.version + 1, Some(h.asInstanceOf[ModificationEventHandler[A, Event[A]]].handleEvent(aggregate.aggregateRoot.get, eventRow.event)))
+          case h: DeletionEventHandler[A, _] => Aggregate(aggregate.uid, aggregate.version + 1, None)
         }
       } else if (aggregate.aggregateRoot.isEmpty) {
         throw new AggregateWasAlreadyDeletedException("Unexpected modification of already deleted aggregate")

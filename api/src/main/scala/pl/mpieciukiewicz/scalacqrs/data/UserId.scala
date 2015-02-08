@@ -1,7 +1,5 @@
 package pl.mpieciukiewicz.scalacqrs.data
 
-import pl.mpieciukiewicz.scalacqrs.data.AggregateId
-
 object UserId {
 
   val ZERO: UserId = new UserId(0L)
