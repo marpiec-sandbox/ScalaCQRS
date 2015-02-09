@@ -1,6 +1,6 @@
 package pl.mpieciukiewicz.scalacqrs.postgresimpl
 
-import java.sql.Connection
+import java.sql.{PreparedStatement, Connection}
 import javax.sql.DataSource
 
 import pl.mpieciukiewicz.scalacqrs._
@@ -27,12 +27,17 @@ class PostgresUidGenerator(dbDataSource: DataSource) extends UIDGenerator {
     if (previousValue == maximum) {
       val connection = dbDataSource.getConnection
       try {
-        val resultSet = connection.prepareStatement(NEXT_VAL_QUERY).executeQuery()
-        if (resultSet.next()) {
-          previousValue = resultSet.getLong(1)
-          maximum = previousValue + stepMinusOne
-        } else {
-          throw new IllegalStateException("Query returned no values, that should not happen.")
+        val statement = connection.prepareStatement(NEXT_VAL_QUERY)
+        try {
+          val resultSet = statement.executeQuery()
+          if (resultSet.next()) {
+            previousValue = resultSet.getLong(1)
+            maximum = previousValue + stepMinusOne
+          } else {
+            throw new IllegalStateException("Query returned no values, that should not happen.")
+          }
+        } finally {
+          statement.close()
         }
       } finally {
         connection.close()
