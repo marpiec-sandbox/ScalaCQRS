@@ -5,7 +5,7 @@ import java.sql.ResultSet
 import javax.sql.DataSource
 
 import pl.mpieciukiewicz.scalacqrs._
-import pl.mpieciukiewicz.scalacqrs.data.AggregateId
+import pl.mpieciukiewicz.scalacqrs.data.{UserId, AggregateId}
 import pl.mpieciukiewicz.scalacqrs.event.{EventRow, Event}
 
 import scala.collection.mutable.ListBuffer
@@ -17,29 +17,29 @@ class PostgresEventStore(dbDataSource: DataSource, serializer: ObjectSerializer)
 
   import jdbcUtils._
 
-  val SELECT_EVENTS_QUERY = "SELECT command_uid, aggregate_uid, version, event_time, event_type, event" +
+  val SELECT_EVENTS_QUERY = "SELECT command_id, user_id, aggregate_id, version, event_time, event_type, event" +
     " FROM events" +
-    " WHERE aggregate_uid = ?" +
+    " WHERE aggregate_id = ?" +
     " ORDER BY version"
 
-  val SELECT_EVENTS_QUERY_TO_VERSION = "SELECT command_uid, aggregate_uid, version, event_time, event_type, event" +
+  val SELECT_EVENTS_QUERY_TO_VERSION = "SELECT command_id, user_id, aggregate_id, version, event_time, event_type, event" +
     " FROM events " +
-    " WHERE aggregate_uid = ? " +
+    " WHERE aggregate_id = ? " +
     " AND version <= ? " +
     " ORDER BY version"
 
-  val SELECT_EVENTS_QUERY_FROM_VERSION = "SELECT command_uid, aggregate_uid, version, event_time, event_type, event" +
+  val SELECT_EVENTS_QUERY_FROM_VERSION = "SELECT command_id, user_id, aggregate_id, version, event_time, event_type, event" +
     " FROM events" +
-    " WHERE aggregate_uid = ?" +
+    " WHERE aggregate_id = ?" +
     " AND version >= ?" +
     " ORDER BY version"
 
-  val SELECT_EVENTS_BY_TYPE = "SELECT command_uid, aggregate_uid, version, event, event_type" +
+  val SELECT_EVENTS_BY_TYPE = "SELECT command_id, user_id, aggregate_id, version, event, event_type" +
     " FROM events" +
     " WHERE event_type = ?" +
     " ORDER BY version"
 
-  val SELECT_AGGREGATES_IDS = "SELECT uid" +
+  val SELECT_AGGREGATES_IDS = "SELECT id" +
     " FROM aggregates" +
     " WHERE type = ?"
 
@@ -79,29 +79,31 @@ class PostgresEventStore(dbDataSource: DataSource, serializer: ObjectSerializer)
     while (resultSet.next()) {
       val eventRow = EventRow[T](
         CommandId(resultSet.getLong(1)),
-        AggregateId(resultSet.getLong(2)),
-        resultSet.getInt(3),
-        resultSet.getTimestamp(4).toInstant,
-        serializer.fromJson(resultSet.getString(6), Class.forName(resultSet.getString(5)).asInstanceOf[Class[Event[T]]]))
+        UserId(resultSet.getLong(2)),
+        AggregateId(resultSet.getLong(3)),
+        resultSet.getInt(4),
+        resultSet.getTimestamp(5).toInstant,
+        serializer.fromJson(resultSet.getString(7), Class.forName(resultSet.getString(6)).asInstanceOf[Class[Event[T]]]))
       eventsRows += eventRow
     }
     eventsRows.toVector
   }
 
 
-  override def addFirstEvent(commandId: CommandId, newAggregateId: AggregateId, event: Event[_]): Unit =
-    addEvent(commandId, newAggregateId, 0, event)
+  override def addFirstEvent(commandId: CommandId, userId: UserId, newAggregateId: AggregateId, event: Event[_]): Unit =
+    addEvent(commandId, userId, newAggregateId, 0, event)
 
 
-  override def addEvent(commandId: CommandId, aggregateId: AggregateId, expectedVersion: Int, event: Event[_]): Unit = {
-    executeStatement("SELECT add_event(?, ?, ?, ?, ?, ?, ?);") { statement =>
+  override def addEvent(commandId: CommandId, userId: UserId, aggregateId: AggregateId, expectedVersion: Int, event: Event[_]): Unit = {
+    executeStatement("SELECT add_event(?, ?, ?, ?, ?, ?, ?, ?);") { statement =>
       statement.setLong(1, commandId.uid)
-      statement.setLong(2, aggregateId.uid)
-      statement.setInt(3, expectedVersion)
-      statement.setString(4, event.aggregateType.getName)
-      statement.setString(5, event.getClass.getName)
-      statement.setInt(6, 0)
-      statement.setString(7, serializer.toJson(event))
+      statement.setLong(2, userId.uid)
+      statement.setLong(3, aggregateId.uid)
+      statement.setInt(4, expectedVersion)
+      statement.setString(5, event.aggregateType.getName)
+      statement.setString(6, event.getClass.getName)
+      statement.setInt(7, 0)
+      statement.setString(8, serializer.toJson(event))
     }
     callEventListeners(aggregateId, event)
   }

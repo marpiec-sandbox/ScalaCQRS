@@ -3,7 +3,7 @@ package pl.mpieciukiewicz.scalacqrs.memoryimpl
 import java.time.Clock
 
 import pl.mpieciukiewicz.scalacqrs._
-import pl.mpieciukiewicz.scalacqrs.data.AggregateId
+import pl.mpieciukiewicz.scalacqrs.data.{UserId, AggregateId}
 import pl.mpieciukiewicz.scalacqrs.event.{EventRow, Event}
 import pl.mpieciukiewicz.scalacqrs.exception.{NoEventsForAggregateException, ConcurrentAggregateModificationException}
 
@@ -15,15 +15,15 @@ class MemoryEventStore(clock: Clock) extends EventStore {
   private val eventsByType = mutable.Map[Class[_], mutable.Map[AggregateId, ListBuffer[EventRow[_]]]]()
 
 
-  override def addFirstEvent(commandId: CommandId, newAggregateId: AggregateId, event: Event[_]): Unit = {
+  override def addFirstEvent(commandId: CommandId, userId: UserId, newAggregateId: AggregateId, event: Event[_]): Unit = {
     val eventsForType = eventsByType.getOrElseUpdate(event.aggregateType, new mutable.HashMap[AggregateId, ListBuffer[EventRow[_]]])
     val eventsForEntity = eventsForType.getOrElseUpdate(newAggregateId, new ListBuffer[EventRow[_]])
-    val eventRow = EventRow(commandId, newAggregateId, 1, clock.instant(), event)
+    val eventRow = EventRow(commandId, userId, newAggregateId, 1, clock.instant(), event)
     eventsForEntity += eventRow
     callEventListeners(newAggregateId, event)
   }
 
-  override def addEvent(commandId: CommandId, aggregateId: AggregateId, expectedVersion: Int, event: Event[_]): Unit = {
+  override def addEvent(commandId: CommandId, userId: UserId, aggregateId: AggregateId, expectedVersion: Int, event: Event[_]): Unit = {
       val eventsForType = eventsByType.getOrElse(event.aggregateType, mutable.Map())
       val eventsForEntity = eventsForType.getOrElseUpdate(aggregateId, new ListBuffer[EventRow[_]])
       
@@ -31,7 +31,7 @@ class MemoryEventStore(clock: Clock) extends EventStore {
         throw new ConcurrentAggregateModificationException("Expected version " + expectedVersion + " but is " + eventsForEntity.size)
       }
 
-      eventsForEntity += EventRow(commandId, aggregateId, expectedVersion + 1, clock.instant(), event)
+      eventsForEntity += EventRow(commandId, userId, aggregateId, expectedVersion + 1, clock.instant(), event)
       callEventListeners(aggregateId, event)
   }
 

@@ -17,7 +17,7 @@ abstract class CommandBus(uidGenerator: UIDGenerator, commandStore: CommandStore
   def submit[R](userId: UserId, command: Command[R]): R = {
     try {
       val newCommandId = uidGenerator.nextCommandId
-      val result = commandHandlers(command.getClass.asInstanceOf[Class[Command[AnyRef]]]).asInstanceOf[CommandHandler[Command[R], R]].handle(newCommandId, command)
+      val result = commandHandlers(command.getClass.asInstanceOf[Class[Command[AnyRef]]]).asInstanceOf[CommandHandler[Command[R], R]].handle(newCommandId, userId, command)
       commandStore.addCommand(newCommandId, userId, command)
       result.asInstanceOf[R]
     } catch {

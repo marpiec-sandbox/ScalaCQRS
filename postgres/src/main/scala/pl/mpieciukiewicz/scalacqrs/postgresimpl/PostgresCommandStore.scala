@@ -14,7 +14,7 @@ class PostgresCommandStore(dbDataSource: DataSource, serializer: ObjectSerialize
 
   val SELECT_COMMAND_BY_ID = "SELECT command_id, user_id, command_time, command_type, command_type_version, command" +
     " FROM commands" +
-    " WHERE command_uid = ?"
+    " WHERE command_id = ?"
 
   override def addCommand(commandId: CommandId, userId: UserId, command: AnyRef): Unit = {
     val connection = dbDataSource.getConnection

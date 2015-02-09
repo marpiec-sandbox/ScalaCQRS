@@ -19,7 +19,11 @@ abstract class CoreDataStore[A](val eventStore: EventStore, handlers: Seq[EventH
   private val eventHandlers = mutable.HashMap[Class[A], mutable.HashMap[Class[Event[A]], EventHandler[A, _ <: Event[A]]]]()
 
   val aggregateClass: Class[A] = {
-    val arguments: Array[Type] = this.getClass.getGenericSuperclass.asInstanceOf[ParameterizedTypeImpl].getActualTypeArguments
+    var clazz = this.getClass.asInstanceOf[Class[_]]
+    while(clazz.getGenericSuperclass.isInstanceOf[Class[_]]) {
+        clazz = clazz.getGenericSuperclass.asInstanceOf[Class[_]]
+    }
+    val arguments: Array[Type] = clazz.getGenericSuperclass.asInstanceOf[ParameterizedTypeImpl].getActualTypeArguments
     arguments(0).asInstanceOf[Class[A]]
   }
 
