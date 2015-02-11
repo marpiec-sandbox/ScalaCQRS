@@ -8,6 +8,14 @@ scalaVersion := "2.11.5"
 
 resolvers ++= Seq("marpiec BinTray" at "http://dl.bintray.com/marpiec/maven/")
 
+publishMavenStyle := true
+
+publishArtifact in Test := false
+
+pomIncludeRepository := { _ => false }
+
+publishTo := Some("snapshots" at sys.props.getOrElse("mavenRepo", default = ""))
+
 libraryDependencies ++= Seq("org.slf4j" % "slf4j-api" % "1.7.7",
   "pl.mpieciukiewicz.mpjsons" % "mpjsons" % "0.5.2" % Test,
   "org.scalatest" %% "scalatest" % "2.2.2" % Test,

@@ -9,7 +9,13 @@ scalaVersion := "2.11.5"
 scalacOptions ++= Seq(
   "-feature")
 
-publish := {}
+publishMavenStyle := true
+
+publishArtifact in Test := false
+
+pomIncludeRepository := { _ => false }
+
+publishTo := Some("snapshots" at sys.props.getOrElse("mavenRepo", default = ""))
 
 publishLocal := {}
 
