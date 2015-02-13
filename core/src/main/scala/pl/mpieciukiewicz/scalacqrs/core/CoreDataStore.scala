@@ -7,10 +7,11 @@ import pl.mpieciukiewicz.scalacqrs._
 import pl.mpieciukiewicz.scalacqrs.data.AggregateId
 import pl.mpieciukiewicz.scalacqrs.event.{EventRow, Event}
 import pl.mpieciukiewicz.scalacqrs.eventhandler.{EventHandler, CreationEventHandler, DeletionEventHandler, ModificationEventHandler}
-import pl.mpieciukiewicz.scalacqrs.exception.AggregateWasAlreadyDeletedException
+import pl.mpieciukiewicz.scalacqrs.exception.{NoEventsForAggregateException, IncorrectAggregateVersionException, AggregateWasAlreadyDeletedException}
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl
 
 import scala.collection.mutable
+import scala.util.Try
 
 abstract class CoreDataStore[A](val eventStore: EventStore, handlers: Seq[EventHandler[A, _ <: Event[A]]]) extends DataStore[A] {
 
@@ -42,20 +43,19 @@ abstract class CoreDataStore[A](val eventStore: EventStore, handlers: Seq[EventH
   }
 
 
-  override def getAggregateByVersion(id: AggregateId, version: Int): Aggregate[A] = getAggregateWithOptionalVersion(id, Some(version))
+  override def getAggregateByVersion(id: AggregateId, version: Int): Try[Aggregate[A]] = getAggregateWithOptionalVersion(id, Some(version))
 
-  override def getAggregate(id: AggregateId): Aggregate[A] = getAggregateWithOptionalVersion(id, None)
+  override def getAggregate(id: AggregateId): Try[Aggregate[A]] = getAggregateWithOptionalVersion(id, None)
 
-  override def getAggregates(ids: Seq[AggregateId]): Map[AggregateId, Aggregate[A]] = {
+  override def getAggregates(ids: Seq[AggregateId]): Seq[Aggregate[A]] = {
     //TODO for sure optimize for databases
-    val aggregates: Seq[Aggregate[A]] = ids.map(getAggregateWithOptionalVersion(_, None))
-    ids.zip(aggregates).toMap
+    ids.map(getAggregateWithOptionalVersion(_, None).getOrElse(null)).filter(_ != null)
   }
 
-  private def getAggregateWithOptionalVersion(id: AggregateId, version: Option[Int]): Aggregate[A] = {
+  private def getAggregateWithOptionalVersion(id: AggregateId, version: Option[Int]): Try[Aggregate[A]] = Try {
     val eventRows = if (version.isDefined) {
       if (version.get < 1) {
-        throw new IllegalArgumentException("Cannot get aggregates for versions lower than 1")
+        throw new IncorrectAggregateVersionException("Cannot get aggregates for versions lower than 1")
       } else {
         eventStore.getEventsForAggregateToVersion(aggregateClass, id, version.get)
       }
@@ -64,7 +64,7 @@ abstract class CoreDataStore[A](val eventStore: EventStore, handlers: Seq[EventH
     }
 
     if (eventRows.isEmpty) {
-      throw new IllegalStateException("Aggregate of type " + aggregateClass + " does not exist.")
+      throw new NoEventsForAggregateException("Aggregate of type " + aggregateClass + " does not exist.")
     }
 
 

@@ -55,7 +55,7 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen with BeforeA
 
       Then("we can get aggregate from dataStore")
       var userAggregate = dataStore.getAggregate(registeredUserId)
-      assertThat(userAggregate.aggregateRoot.get).isEqualTo(User("Marcin Pieciukiewicz", None))
+      assertThat(userAggregate.get.aggregateRoot.get).isEqualTo(User("Marcin Pieciukiewicz", None))
 
 
       When("Address is defined for user")
@@ -63,22 +63,22 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen with BeforeA
 
       Then("we can get modified user from dataStore")
       userAggregate = dataStore.getAggregate(registeredUserId)
-      assertThat(userAggregate.aggregateRoot.get).isEqualTo(User("Marcin Pieciukiewicz", Some(Address("Warsaw", "Center", "1"))))
+      assertThat(userAggregate.get.aggregateRoot.get).isEqualTo(User("Marcin Pieciukiewicz", Some(Address("Warsaw", "Center", "1"))))
 
       Then("also we can get previous version of user from dataStore")
       userAggregate = dataStore.getAggregateByVersion(registeredUserId, 1)
-      assertThat(userAggregate.aggregateRoot.get).isEqualTo(User("Marcin Pieciukiewicz", None))
+      assertThat(userAggregate.get.aggregateRoot.get).isEqualTo(User("Marcin Pieciukiewicz", None))
 
       When("User is removed")
       userCommand.submit(currentUserId, new DeleteUser(registeredUserId, 2))
 
       Then("Will get empty aggregate from dataStore")
       userAggregate = dataStore.getAggregate(registeredUserId)
-      assertThat(userAggregate.aggregateRoot.isEmpty).isTrue
+      assertThat(userAggregate.get.aggregateRoot.isEmpty).isTrue
 
       Then("Also we can get previous version of user, before deletion")
       userAggregate = dataStore.getAggregateByVersion(registeredUserId, 2)
-      assertThat(userAggregate.aggregateRoot.get).isEqualTo(User("Marcin Pieciukiewicz", Some(Address("Warsaw", "Center", "1"))))
+      assertThat(userAggregate.get.aggregateRoot.get).isEqualTo(User("Marcin Pieciukiewicz", Some(Address("Warsaw", "Center", "1"))))
 
 
     }

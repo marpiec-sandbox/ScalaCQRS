@@ -36,7 +36,7 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
       assertThat(registrationResult.success).isTrue
 
       var userAggregate = userDataStore.getAggregate(registeredUserId)
-      assertThat(userAggregate.aggregateRoot.get).isEqualTo(User("Marcin Pieciukiewicz", None))
+      assertThat(userAggregate.get.aggregateRoot.get).isEqualTo(User("Marcin Pieciukiewicz", None))
 
 
       When("Address is defined for user")
@@ -44,22 +44,22 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
 
       Then("we can get modified user from userDataStore")
       userAggregate = userDataStore.getAggregate(registeredUserId)
-      assertThat(userAggregate.aggregateRoot.get).isEqualTo(User("Marcin Pieciukiewicz", Some(Address("Warsaw", "Center", "1"))))
+      assertThat(userAggregate.get.aggregateRoot.get).isEqualTo(User("Marcin Pieciukiewicz", Some(Address("Warsaw", "Center", "1"))))
 
       Then("also we can get previous version of user from userDataStore")
       userAggregate = userDataStore.getAggregateByVersion(registeredUserId, 1)
-      assertThat(userAggregate.aggregateRoot.get).isEqualTo(User("Marcin Pieciukiewicz", None))
+      assertThat(userAggregate.get.aggregateRoot.get).isEqualTo(User("Marcin Pieciukiewicz", None))
 
       When("User is removed")
       userCommandBus.submit(currentUserId, new DeleteUser(registeredUserId, 2))
 
       Then("Will get empty aggregate from userDataStore")
       userAggregate = userDataStore.getAggregate(registeredUserId)
-      assertThat(userAggregate.aggregateRoot.isEmpty).isTrue
+      assertThat(userAggregate.get.aggregateRoot.isEmpty).isTrue
 
       Then("Also we can get previous version of user, before deletion")
       userAggregate = userDataStore.getAggregateByVersion(registeredUserId, 2)
-      assertThat(userAggregate.aggregateRoot.get).isEqualTo(User("Marcin Pieciukiewicz", Some(Address("Warsaw", "Center", "1"))))
+      assertThat(userAggregate.get.aggregateRoot.get).isEqualTo(User("Marcin Pieciukiewicz", Some(Address("Warsaw", "Center", "1"))))
 
 
 
