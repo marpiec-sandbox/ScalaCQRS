@@ -2,10 +2,10 @@ package pl.mpieciukiewicz.scalacqrs.memoryimpl
 
 import java.time.Clock
 
-import org.fest.assertions.api.Assertions.assertThat
+import org.fest.assertions.api.Assertions._
 import org.scalatest.{FeatureSpec, GivenWhenThen}
 import pl.mpieciukiewicz.scalacqrs.data.UserId
-import pl.mpieciukiewicz.user.api.command.{RegisterUser, DeleteUser, ChangeUserAddress}
+import pl.mpieciukiewicz.user.api.command.{UndoUserChange, RegisterUser, DeleteUser, ChangeUserAddress}
 import pl.mpieciukiewicz.user.api.model.{User, Address}
 import pl.mpieciukiewicz.user.{UserDataStore, UserCommandBus}
 import pl.mpieciukiewicz.scalacqrs.core.CoreDataStore
@@ -62,6 +62,30 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
       assertThat(userAggregate.get.aggregateRoot.get).isEqualTo(User("Marcin Pieciukiewicz", Some(Address("Warsaw", "Center", "1"))))
 
 
+      When("Deletion is undone")
+      userCommandBus.submit(currentUserId, new UndoUserChange(registeredUserId, 3))
+
+      Then("We can get user from userDataStore")
+      userAggregate = userDataStore.getAggregate(registeredUserId)
+      assertThat(userAggregate.get.version).isEqualTo(4)
+      assertThat(userAggregate.get.aggregateRoot.get).isEqualTo(User("Marcin Pieciukiewicz", Some(Address("Warsaw", "Center", "1"))))
+
+
+      When("Address change is undone")
+      userCommandBus.submit(currentUserId, new UndoUserChange(registeredUserId, 4))
+
+      Then("We can get user from userDataStore without address")
+      userAggregate = userDataStore.getAggregate(registeredUserId)
+      assertThat(userAggregate.get.version).isEqualTo(5)
+      assertThat(userAggregate.get.aggregateRoot.get).isEqualTo(User("Marcin Pieciukiewicz", None))
+
+
+      When("Address is defined for user")
+      userCommandBus.submit(currentUserId, new ChangeUserAddress(registeredUserId, 5, "Warsaw", "Suburb", "1"))
+
+      Then("we can get modified user from userDataStore")
+      userAggregate = userDataStore.getAggregate(registeredUserId)
+      assertThat(userAggregate.get.aggregateRoot.get).isEqualTo(User("Marcin Pieciukiewicz", Some(Address("Warsaw", "Suburb", "1"))))
 
     }
 

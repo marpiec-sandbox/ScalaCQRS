@@ -5,7 +5,7 @@ import java.lang.reflect.Type
 import org.slf4j.LoggerFactory
 import pl.mpieciukiewicz.scalacqrs._
 import pl.mpieciukiewicz.scalacqrs.data.AggregateId
-import pl.mpieciukiewicz.scalacqrs.event.{EventRow, Event}
+import pl.mpieciukiewicz.scalacqrs.event.{UndoEvent, EventRow, Event}
 import pl.mpieciukiewicz.scalacqrs.eventhandler.{EventHandler, CreationEventHandler, DeletionEventHandler, ModificationEventHandler}
 import pl.mpieciukiewicz.scalacqrs.exception.{NoEventsForAggregateException, IncorrectAggregateVersionException, AggregateWasAlreadyDeletedException}
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl
@@ -67,8 +67,9 @@ abstract class CoreDataStore[A](val eventStore: EventStore, handlers: Seq[EventH
       throw new NoEventsForAggregateException("Aggregate of type " + aggregateClass + " does not exist.")
     }
 
+    val eventRowsUndoApplied = applyUndoEvents(eventRows)
 
-    val creatorEventRow: EventRow[A] = eventRows.head
+    val creatorEventRow: EventRow[A] = eventRowsUndoApplied.head
     if (creatorEventRow.version != 1) {
       throw new IllegalStateException("CreatorEvent need to be of version 1, as it always first event for an aggregate. ("+
         creatorEventRow.event.getClass+" has version "+creatorEventRow.version+")")
@@ -78,8 +79,10 @@ abstract class CoreDataStore[A](val eventStore: EventStore, handlers: Seq[EventH
 
     var aggregate = Aggregate(id, 1, Some(aggregateRoot))
 
-    eventRows.tail.foreach((eventRow) => {
-      if (eventRow.version == aggregate.version + 1 && aggregate.aggregateRoot.isDefined) {
+    eventRowsUndoApplied.tail.foreach((eventRow) => {
+      if(eventRow.event.isInstanceOf[UndoEvent[A]] && eventRow.version == aggregate.version + eventRow.event.asInstanceOf[UndoEvent[A]].eventsCount * 2 && aggregate.aggregateRoot.isDefined) {
+        aggregate = Aggregate(aggregate.uid, aggregate.version + eventRow.event.asInstanceOf[UndoEvent[A]].eventsCount * 2, aggregate.aggregateRoot)
+      } else if (eventRow.version == aggregate.version + 1 && aggregate.aggregateRoot.isDefined) {
         val handler: EventHandler[A, _] = eventHandlers(eventRow.event.aggregateType)(eventRow.event.getClass.asInstanceOf[Class[Event[A]]])
         aggregate = handler match {
           case h: ModificationEventHandler[A, _] => Aggregate(aggregate.uid, aggregate.version + 1, Some(h.asInstanceOf[ModificationEventHandler[A, Event[A]]].handleEvent(aggregate.aggregateRoot.get, eventRow.event)))
@@ -99,6 +102,24 @@ abstract class CoreDataStore[A](val eventStore: EventStore, handlers: Seq[EventH
     }
     aggregate
   }
+
+
+  def applyUndoEvents(events: Seq[EventRow[A]]): Seq[EventRow[A]] = {
+    var eventsAfterUndo = List[EventRow[A]]()
+    for(eventRow <- events) {
+      eventRow.event match {
+        case e: UndoEvent[A] =>
+          val previousEventRow = eventsAfterUndo.head
+          previousEventRow.event match {
+            case pe: UndoEvent[A] => eventsAfterUndo = eventRow.copy(event = new UndoEvent[A](pe.eventsCount + 1)) :: eventsAfterUndo.tail.tail
+            case pe: Event[A] => eventsAfterUndo = eventRow :: eventsAfterUndo.tail
+          }
+        case e: Event[A] => eventsAfterUndo ::= eventRow
+      }
+    }
+    eventsAfterUndo.reverse
+  }
+
 
   override def getAllAggregateIds(): Seq[AggregateId] = {
     eventStore.getAllAggregateIds[A](aggregateClass)
