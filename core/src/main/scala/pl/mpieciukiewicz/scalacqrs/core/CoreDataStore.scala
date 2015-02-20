@@ -87,6 +87,7 @@ abstract class CoreDataStore[A](val eventStore: EventStore, handlers: Seq[EventH
         aggregate = handler match {
           case h: ModificationEventHandler[A, _] => Aggregate(aggregate.uid, aggregate.version + 1, Some(h.asInstanceOf[ModificationEventHandler[A, Event[A]]].handleEvent(aggregate.aggregateRoot.get, eventRow.event)))
           case h: DeletionEventHandler[A, _] => Aggregate(aggregate.uid, aggregate.version + 1, None)
+          case _ => throw new IllegalStateException("No handler registered for event " + eventRow.event.getClass.getName)
         }
       } else if (aggregate.aggregateRoot.isEmpty) {
         throw new AggregateWasAlreadyDeletedException("Unexpected modification of already deleted aggregate")
