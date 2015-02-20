@@ -9,13 +9,11 @@ import pl.mpieciukiewicz.scalacqrs.data.{UserId, AggregateId}
 import pl.mpieciukiewicz.scalacqrs.event.{EventRow, Event}
 
 import scala.collection.mutable.ListBuffer
-
+import JdbcUtils._
 
 class PostgresEventStore(dbDataSource: DataSource, serializer: ObjectSerializer) extends EventStore {
 
-  val jdbcUtils = new JdbcUtils(dbDataSource)
-
-  import jdbcUtils._
+  implicit private val db = dbDataSource
 
   val SELECT_EVENTS_QUERY = "SELECT command_id, user_id, aggregate_id, version, event_time, event_type, event" +
     " FROM events" +
@@ -46,6 +44,9 @@ class PostgresEventStore(dbDataSource: DataSource, serializer: ObjectSerializer)
   val COUNT_ALL_AGGREGATES = "SELECT count(*) " +
     " FROM aggregates" +
     " WHERE type = ?"
+
+  new EventSchemaInitializer().initSchema()
+
 
   override def getEventsForAggregate[T](aggregateClass: Class[T], uid: AggregateId): Seq[EventRow[T]] = {
 

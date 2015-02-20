@@ -5,8 +5,13 @@ import javax.sql.DataSource
 
 import pl.mpieciukiewicz.scalacqrs._
 import pl.mpieciukiewicz.scalacqrs.data.AggregateId
+import JdbcUtils._
 
 class PostgresUidGenerator(dbDataSource: DataSource) extends UIDGenerator {
+
+  implicit private val db = dbDataSource
+
+  new UidGeneratorSchemaInitializer().initSchema()
 
   val NEXT_VAL_QUERY = "SELECT NEXTVAL('uids_seq')"
   val SEQUENCE_STEP_QUERY = "SELECT increment_by FROM uids_seq"
@@ -14,6 +19,7 @@ class PostgresUidGenerator(dbDataSource: DataSource) extends UIDGenerator {
   val stepMinusOne = loadSequenceStep(dbDataSource.getConnection) - 1
   var previousValue = 0L
   var maximum = 0L
+
 
   override def nextAggregateId = synchronized {
     AggregateId(nextUniqueValue)

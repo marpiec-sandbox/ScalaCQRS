@@ -6,8 +6,11 @@ import javax.sql.DataSource
 import pl.mpieciukiewicz.scalacqrs._
 import pl.mpieciukiewicz.scalacqrs.command.CommandRow
 import pl.mpieciukiewicz.scalacqrs.data.UserId
+import JdbcUtils._
 
 class PostgresCommandStore(dbDataSource: DataSource, serializer: ObjectSerializer) extends CommandStore {
+
+  implicit private val db = dbDataSource
 
   val INSERT_COMMAND = "INSERT INTO commands(id, command_id, user_id, command_time, command_type, command_type_version, command)" +
     " VALUES (NEXTVAL('commands_seq'), ?, ?, current_timestamp, ?, ?, ?)"
@@ -16,8 +19,14 @@ class PostgresCommandStore(dbDataSource: DataSource, serializer: ObjectSerialize
     " FROM commands" +
     " WHERE command_id = ?"
 
-  override def addCommand(commandId: CommandId, userId: UserId, command: AnyRef): Unit = {
-    val connection = dbDataSource.getConnection
+  new CommandSchemaInitializer().initSchema()
+
+  override def addCommand(
+                           commandId: CommandId, userId: UserId,
+                           command: AnyRef): Unit = {
+    val
+    connection =
+      dbDataSource.getConnection
     val statement = connection.prepareStatement(INSERT_COMMAND)
     statement.setLong(1, commandId.uid)
     statement.setLong(2, userId.uid)
