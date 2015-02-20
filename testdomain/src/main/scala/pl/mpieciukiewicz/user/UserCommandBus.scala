@@ -8,4 +8,4 @@ class UserCommandBus(uidGenerator: UIDGenerator, commandStore: CommandStore, eve
     Array(new RegisterUserHandler(eventStore),
           new ChangeUserAddressHandler(eventStore),
           new DeleteUserHandler(eventStore),
-          new UserChangeUndoneHandler(eventStore)))
+          new UndoUserChangeHandler(eventStore)))
