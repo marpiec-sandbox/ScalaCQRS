@@ -108,6 +108,7 @@ abstract class CoreDataStore[A](val eventStore: EventStore, handlers: Seq[EventH
 
 
   def applyUndoEvents(events: Seq[EventRow[A]]): Seq[EventRow[A]] = {
+    val noopEvent = NoopEvent[A]()
     var eventsAfterUndo = List[EventRow[A]]()
     var eventsStored = 0
     for(eventRow <- events) {
@@ -125,7 +126,7 @@ abstract class CoreDataStore[A](val eventStore: EventStore, handlers: Seq[EventH
 
             }
           })
-          eventsAfterUndo = eventRow.copy(event = NoopEvent[A]()) :: undone.map(ev => ev.copy(event = NoopEvent[A]())) ::: notUndone
+          eventsAfterUndo = eventRow.copy(event = noopEvent) :: undone.map(ev => ev.copy(event = noopEvent)) ::: notUndone
         case e: Event[A] => eventsAfterUndo ::= eventRow
       }
     }
