@@ -94,7 +94,7 @@ abstract class CoreDataStore[A](val eventStore: EventStore, handlers: Seq[EventH
       } else {
         throw new IllegalStateException("Unexpected version for aggregate when applying eventRow. " +
           "[aggregateType:" + aggregateClass.getName + ", aggregateId:" + id + ", aggregateVersion:" +
-          aggregate.version + ", eventType:" + eventRow.getClass.getName + ", expectedVersion:" + eventRow.version + "]")
+          aggregate.version + ", eventType:" + eventRow.event.getClass.getName + ", expectedVersion:" + eventRow.version + "]")
       }
     })
 
