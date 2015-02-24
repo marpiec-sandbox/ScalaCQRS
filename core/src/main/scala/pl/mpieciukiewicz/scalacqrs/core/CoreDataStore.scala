@@ -80,14 +80,16 @@ abstract class CoreDataStore[A](val eventStore: EventStore, handlers: Seq[EventH
     var aggregate = Aggregate(id, 1, Some(aggregateRoot))
 
     eventRowsUndoApplied.tail.foreach((eventRow) => {
-      if(eventRow.event.isInstanceOf[UndoEvent[A]] && eventRow.version == aggregate.version + eventRow.event.asInstanceOf[UndoEvent[A]].eventsCount * 2 && aggregate.aggregateRoot.isDefined) {
-        aggregate = Aggregate(aggregate.uid, aggregate.version + eventRow.event.asInstanceOf[UndoEvent[A]].eventsCount * 2, aggregate.aggregateRoot)
-      } else if (eventRow.version == aggregate.version + 1 && aggregate.aggregateRoot.isDefined) {
-        val handler: EventHandler[A, _] = eventHandlers(eventRow.event.aggregateType)(eventRow.event.getClass.asInstanceOf[Class[Event[A]]])
-        aggregate = handler match {
-          case h: ModificationEventHandler[A, _] => Aggregate(aggregate.uid, aggregate.version + 1, Some(h.asInstanceOf[ModificationEventHandler[A, Event[A]]].handleEvent(aggregate.aggregateRoot.get, eventRow.event)))
-          case h: DeletionEventHandler[A, _] => Aggregate(aggregate.uid, aggregate.version + 1, None)
-          case _ => throw new IllegalStateException("No handler registered for event " + eventRow.event.getClass.getName)
+      if (eventRow.version == aggregate.version + 1 && aggregate.aggregateRoot.isDefined) {
+        if(eventRow.event.isInstanceOf[NoopEvent[A]]) {
+          aggregate = Aggregate(aggregate.uid, aggregate.version + 1, aggregate.aggregateRoot)
+        } else {
+          val handler: EventHandler[A, _] = eventHandlers(eventRow.event.aggregateType)(eventRow.event.getClass.asInstanceOf[Class[Event[A]]])
+          aggregate = handler match {
+            case h: ModificationEventHandler[A, _] => Aggregate(aggregate.uid, aggregate.version + 1, Some(h.asInstanceOf[ModificationEventHandler[A, Event[A]]].handleEvent(aggregate.aggregateRoot.get, eventRow.event)))
+            case h: DeletionEventHandler[A, _] => Aggregate(aggregate.uid, aggregate.version + 1, None)
+            case _ => throw new IllegalStateException("No handler registered for event " + eventRow.event.getClass.getName)
+          }
         }
       } else if (aggregate.aggregateRoot.isEmpty) {
         throw new AggregateWasAlreadyDeletedException("Unexpected modification of already deleted aggregate")
@@ -107,14 +109,23 @@ abstract class CoreDataStore[A](val eventStore: EventStore, handlers: Seq[EventH
 
   def applyUndoEvents(events: Seq[EventRow[A]]): Seq[EventRow[A]] = {
     var eventsAfterUndo = List[EventRow[A]]()
+    var eventsStored = 0
     for(eventRow <- events) {
+      eventsStored += 1
       eventRow.event match {
         case e: UndoEvent[A] =>
-          val previousEventRow = eventsAfterUndo.head
-          previousEventRow.event match {
-            case pe: UndoEvent[A] => eventsAfterUndo = eventRow.copy(event = new UndoEvent[A](pe.eventsCount + 1)) :: eventsAfterUndo.tail.tail
-            case pe: Event[A] => eventsAfterUndo = eventRow :: eventsAfterUndo.tail
-          }
+          var undoneCount = 0
+          val (undone, notUndone) = eventsAfterUndo.span(eventRow => {
+            if(eventRow.event.isInstanceOf[NoopEvent[A]]) {
+              true
+            } else {
+              val test = undoneCount < e.eventsCount
+              undoneCount += 1
+              test
+
+            }
+          })
+          eventsAfterUndo = eventRow.copy(event = NoopEvent[A]()) :: undone.map(ev => ev.copy(event = NoopEvent[A]())) ::: notUndone
         case e: Event[A] => eventsAfterUndo ::= eventRow
       }
     }

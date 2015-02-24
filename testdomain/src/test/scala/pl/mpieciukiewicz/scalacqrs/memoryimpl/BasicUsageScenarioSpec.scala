@@ -63,7 +63,7 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
 
 
       When("Deletion is undone")
-      userCommandBus.submit(currentUserId, new UndoUserChange(registeredUserId, 3))
+      userCommandBus.submit(currentUserId, new UndoUserChange(registeredUserId, 3, 1))
 
       Then("We can get user from userDataStore")
       userAggregate = userDataStore.getAggregate(registeredUserId)
@@ -72,7 +72,7 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
 
 
       When("Address change is undone")
-      userCommandBus.submit(currentUserId, new UndoUserChange(registeredUserId, 4))
+      userCommandBus.submit(currentUserId, new UndoUserChange(registeredUserId, 4, 1))
 
       Then("We can get user from userDataStore without address")
       userAggregate = userDataStore.getAggregate(registeredUserId)
@@ -86,6 +86,15 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
       Then("we can get modified user from userDataStore")
       userAggregate = userDataStore.getAggregate(registeredUserId)
       assertThat(userAggregate.get.aggregateRoot.get).isEqualTo(User("Marcin Pieciukiewicz", Some(Address("Warsaw", "Suburb", "1"))))
+
+      When("New address is defined for user and two event sundone")
+      userCommandBus.submit(currentUserId, new ChangeUserAddress(registeredUserId, 6, "Warsaw", "Somewhere", "1"))
+      userCommandBus.submit(currentUserId, new UndoUserChange(registeredUserId, 7, 2))
+
+      Then("We can get correct address")
+      userAggregate = userDataStore.getAggregate(registeredUserId)
+      assertThat(userAggregate.get.version).isEqualTo(8)
+      assertThat(userAggregate.get.aggregateRoot.get).isEqualTo(User("Marcin Pieciukiewicz", None))
 
     }
 
