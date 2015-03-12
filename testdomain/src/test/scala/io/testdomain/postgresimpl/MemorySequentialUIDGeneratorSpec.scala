@@ -3,8 +3,8 @@ package io.testdomain.postgresimpl
 import io.scalacqrs.postgresimpl.PostgresUidGenerator
 import io.testdomain.postgresimpl.jdbc.ConnectionPoolFactory
 import org.apache.commons.dbcp2.BasicDataSource
-import org.fest.assertions.api.Assertions.assertThat
-import org.scalatest.{BeforeAndAfter, FeatureSpec, GivenWhenThen}
+import org.scalatest.{MustMatchers, BeforeAndAfter, FeatureSpec, GivenWhenThen}
+import MustMatchers._
 import io.scalacqrs.data.AggregateId
 
 import scala.collection.parallel.ForkJoinTaskSupport
@@ -39,7 +39,7 @@ class MemorySequentialUIDGeneratorSpec extends FeatureSpec with GivenWhenThen wi
 
       Then("Number of unique generated UID is equal to number of generations")
 
-      assertThat(generatedUIDs.size).isEqualTo(generations)
+      generatedUIDs must have size generations
 
     }
 

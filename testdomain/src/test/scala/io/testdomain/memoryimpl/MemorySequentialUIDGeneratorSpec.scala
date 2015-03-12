@@ -1,11 +1,11 @@
 package io.testdomain.memoryimpl
 
 import io.scalacqrs.memoryimpl.MemorySequentialUIDGenerator
-import org.fest.assertions.api.Assertions.assertThat
 
 import scala.collection.parallel.ForkJoinTaskSupport
 import scala.collection.parallel.immutable.ParRange
-import org.scalatest.{FeatureSpec, GivenWhenThen}
+import org.scalatest.{MustMatchers, FeatureSpec, GivenWhenThen}
+import MustMatchers._
 
 class MemorySequentialUIDGeneratorSpec extends FeatureSpec with GivenWhenThen {
 
@@ -29,7 +29,7 @@ class MemorySequentialUIDGeneratorSpec extends FeatureSpec with GivenWhenThen {
 
       Then("Number of unique generated UID is equal to number of generations")
 
-      assertThat(generatedUIDs.size).isEqualTo(generations)
+      generatedUIDs must have size generations
 
     }
 

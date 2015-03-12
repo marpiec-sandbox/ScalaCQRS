@@ -3,8 +3,8 @@ package io.testdomain.memoryimpl
 import java.time.Clock
 
 import io.scalacqrs.memoryimpl.{MemorySequentialUIDGenerator, MemoryCommandStore, MemoryEventStore}
-import org.fest.assertions.api.Assertions._
-import org.scalatest.{FeatureSpec, GivenWhenThen}
+import org.scalatest.{MustMatchers, FeatureSpec, GivenWhenThen}
+import MustMatchers._
 import io.scalacqrs.data.UserId
 import io.testdomain.user.api.command.{UndoUserChange, RegisterUser, DeleteUser, ChangeUserAddress}
 import io.testdomain.user.api.model.{User, Address}
@@ -32,10 +32,10 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
       val registrationResult = userCommandBus.submit(currentUserId, new RegisterUser(registeredUserId, "Marcin Pieciukiewicz"))
 
       Then("we can get aggregate from userDataStore")
-      assertThat(registrationResult.success).isTrue
+      registrationResult.success mustBe true
 
       var userAggregate = userDataStore.getAggregate(registeredUserId)
-      assertThat(userAggregate.get.aggregateRoot.get).isEqualTo(User("Marcin Pieciukiewicz", None))
+      userAggregate.get.aggregateRoot.get mustBe User("Marcin Pieciukiewicz", None)
 
 
       When("Address is defined for user")
@@ -43,22 +43,22 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
 
       Then("we can get modified user from userDataStore")
       userAggregate = userDataStore.getAggregate(registeredUserId)
-      assertThat(userAggregate.get.aggregateRoot.get).isEqualTo(User("Marcin Pieciukiewicz", Some(Address("Warsaw", "Center", "1"))))
+      userAggregate.get.aggregateRoot.get mustBe User("Marcin Pieciukiewicz", Some(Address("Warsaw", "Center", "1")))
 
       Then("also we can get previous version of user from userDataStore")
       userAggregate = userDataStore.getAggregateByVersion(registeredUserId, 1)
-      assertThat(userAggregate.get.aggregateRoot.get).isEqualTo(User("Marcin Pieciukiewicz", None))
+      userAggregate.get.aggregateRoot.get mustBe User("Marcin Pieciukiewicz", None)
 
       When("User is removed")
       userCommandBus.submit(currentUserId, new DeleteUser(registeredUserId, 2))
 
       Then("Will get empty aggregate from userDataStore")
       userAggregate = userDataStore.getAggregate(registeredUserId)
-      assertThat(userAggregate.get.aggregateRoot.isEmpty).isTrue
+      userAggregate.get.aggregateRoot mustBe empty
 
       Then("Also we can get previous version of user, before deletion")
       userAggregate = userDataStore.getAggregateByVersion(registeredUserId, 2)
-      assertThat(userAggregate.get.aggregateRoot.get).isEqualTo(User("Marcin Pieciukiewicz", Some(Address("Warsaw", "Center", "1"))))
+      userAggregate.get.aggregateRoot.get mustBe User("Marcin Pieciukiewicz", Some(Address("Warsaw", "Center", "1")))
 
 
       When("Deletion is undone")
@@ -66,8 +66,8 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
 
       Then("We can get user from userDataStore")
       userAggregate = userDataStore.getAggregate(registeredUserId)
-      assertThat(userAggregate.get.version).isEqualTo(4)
-      assertThat(userAggregate.get.aggregateRoot.get).isEqualTo(User("Marcin Pieciukiewicz", Some(Address("Warsaw", "Center", "1"))))
+      userAggregate.get.version mustBe 4
+      userAggregate.get.aggregateRoot.get mustBe User("Marcin Pieciukiewicz", Some(Address("Warsaw", "Center", "1")))
 
 
       When("Address change is undone")
@@ -75,8 +75,8 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
 
       Then("We can get user from userDataStore without address")
       userAggregate = userDataStore.getAggregate(registeredUserId)
-      assertThat(userAggregate.get.version).isEqualTo(5)
-      assertThat(userAggregate.get.aggregateRoot.get).isEqualTo(User("Marcin Pieciukiewicz", None))
+      userAggregate.get.version mustBe 5
+      userAggregate.get.aggregateRoot.get mustBe User("Marcin Pieciukiewicz", None)
 
 
       When("Address is defined for user")
@@ -84,7 +84,7 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
 
       Then("we can get modified user from userDataStore")
       userAggregate = userDataStore.getAggregate(registeredUserId)
-      assertThat(userAggregate.get.aggregateRoot.get).isEqualTo(User("Marcin Pieciukiewicz", Some(Address("Warsaw", "Suburb", "1"))))
+      userAggregate.get.aggregateRoot.get mustBe User("Marcin Pieciukiewicz", Some(Address("Warsaw", "Suburb", "1")))
 
       When("New address is defined for user and two event sundone")
       userCommandBus.submit(currentUserId, new ChangeUserAddress(registeredUserId, 6, "Warsaw", "Somewhere", "1"))
@@ -92,8 +92,8 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
 
       Then("We can get correct address")
       userAggregate = userDataStore.getAggregate(registeredUserId)
-      assertThat(userAggregate.get.version).isEqualTo(8)
-      assertThat(userAggregate.get.aggregateRoot.get).isEqualTo(User("Marcin Pieciukiewicz", None))
+      userAggregate.get.version mustBe 8
+      userAggregate.get.aggregateRoot.get mustBe User("Marcin Pieciukiewicz", None)
 
     }
 
