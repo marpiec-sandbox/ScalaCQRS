@@ -2,7 +2,7 @@ name := "testdomain"
 
 organization := "io.scalacqrs"
 
-version := "0.1.3-SNAPSHOT"
+version := "0.2.0-SNAPSHOT"
 
 scalaVersion := "2.11.5"
 
