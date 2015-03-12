@@ -1,8 +1,6 @@
 package io.scalacqrs
 
 import io.scalacqrs.data.AggregateId
-import io.scalacqrs.event.Event
-import io.scalacqrs.eventhandler.EventHandler
 
 import scala.util.Try
 
