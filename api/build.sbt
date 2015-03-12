@@ -12,4 +12,4 @@ publishArtifact in Test := false
 
 pomIncludeRepository := { _ => false }
 
-publishTo := Some("snapshots" at sys.props.getOrElse("mavenRepo", default = ""))
+publishTo := Some("snapshots" at sys.props.getOrElse("mavenRepo", default = "http://someMockRepo.com"))

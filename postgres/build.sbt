@@ -14,7 +14,7 @@ publishArtifact in Test := false
 
 pomIncludeRepository := { _ => false }
 
-publishTo := Some("snapshots" at sys.props.getOrElse("mavenRepo", default = ""))
+publishTo := Some("snapshots" at sys.props.getOrElse("mavenRepo", default = "http://someMockRepo.com"))
 
 libraryDependencies ++= Seq("org.slf4j" % "slf4j-api" % "1.7.7",
   "pl.mpieciukiewicz.mpjsons" % "mpjsons" % "0.5.2" % Test,
