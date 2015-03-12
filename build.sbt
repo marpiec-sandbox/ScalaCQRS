@@ -1,6 +1,6 @@
 name := "scala-cqrs"
 
-organization := "pl.mpieciukiewicz"
+organization := "io.scalacqrs"
 
 version := "0.1.3-SNAPSHOT"
 
