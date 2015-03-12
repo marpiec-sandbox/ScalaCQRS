@@ -7,4 +7,6 @@ import pl.mpieciukiewicz.user.eventhandler._
 
 class UserDataStore(eventStore: EventStore)
   extends CoreDataStore[User](eventStore,
-    Array(UserRegisteredEventHandler, UserAddressChangedEventHandler, UserRemovedEventHandler))
+    Array(UserRegisteredEventHandler,
+      UserAddressChangedEventHandler,
+      UserRemovedEventHandler))

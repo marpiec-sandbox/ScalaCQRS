@@ -1,10 +1,9 @@
 package pl.mpieciukiewicz.scalacqrs.postgresimpl
 
-import java.sql.{PreparedStatement, Connection}
 import javax.sql.DataSource
 
 import pl.mpieciukiewicz.scalacqrs._
-import pl.mpieciukiewicz.scalacqrs.command.CommandRow
+import pl.mpieciukiewicz.scalacqrs.command.{Command, CommandRow}
 import pl.mpieciukiewicz.scalacqrs.data.UserId
 import JdbcUtils._
 
@@ -21,7 +20,7 @@ class PostgresCommandStore(dbDataSource: DataSource, serializer: ObjectSerialize
 
   new CommandSchemaInitializer().initSchema()
 
-  override def addCommand(commandId: CommandId, userId: UserId, command: AnyRef): Unit = {
+  override def addCommand(commandId: CommandId, userId: UserId, command: Command[_]): Unit = {
     executeStatement(INSERT_COMMAND) {statement =>
       statement.setLong(1, commandId.uid)
       statement.setLong(2, userId.uid)
@@ -40,7 +39,7 @@ class PostgresCommandStore(dbDataSource: DataSource, serializer: ObjectSerialize
           CommandId(resultSet.getLong(1)),
           UserId(resultSet.getLong(2)),
           resultSet.getTimestamp(3).toInstant,
-          serializer.fromJson(resultSet.getString(6), Class.forName(resultSet.getString(4)).asInstanceOf[Class[AnyRef]]))
+          serializer.fromJson(resultSet.getString(6), Class.forName(resultSet.getString(4)).asInstanceOf[Class[Command[_]]]))
       } else {
         throw new IllegalStateException("Command not found " + commandId)
       }

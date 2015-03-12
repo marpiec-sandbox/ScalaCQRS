@@ -5,7 +5,7 @@ object CommandId {
 
   def parseOrZero(str: String): CommandId = {
     try {
-      new CommandId(str.toLong)
+      CommandId(str.toLong)
     } catch {
       case e: NumberFormatException => ZERO
     }
