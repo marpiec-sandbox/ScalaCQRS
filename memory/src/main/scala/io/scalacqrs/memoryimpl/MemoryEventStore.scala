@@ -20,21 +20,24 @@ class MemoryEventStore(clock: Clock) extends EventStore {
     val eventsForEntity = eventsForType.getOrElseUpdate(newAggregateId, new ListBuffer[EventRow[_]])
     val eventRow = EventRow(commandId, userId, newAggregateId, 1, clock.instant(), event)
     eventsForEntity += eventRow
-    callEventListeners(newAggregateId, event)
+    // this is always first event so version is constant
+    callEventListeners(newAggregateId, 1, event)
   }
 
-  override def addEvent(commandId: CommandId, userId: UserId, aggregateId: AggregateId, expectedVersion: Int, event: Event[_]): Unit = {
-      val eventsForType = eventsByType.getOrElse(event.aggregateType, mutable.Map())
-      val eventsForEntity = eventsForType.getOrElseUpdate(aggregateId, new ListBuffer[EventRow[_]])
-      
-      if (eventsForEntity.size > expectedVersion) {
-        throw new ConcurrentAggregateModificationException("Expected version " + expectedVersion + " but is " + eventsForEntity.size)
-      }
+  override def addEvent(commandId: CommandId, userId: UserId, aggregateId: AggregateId,
+                        expectedVersion: Int, event: Event[_]): Unit = {
+    val eventsForType = eventsByType.getOrElse(event.aggregateType, mutable.Map())
+    val eventsForEntity = eventsForType.getOrElseUpdate(aggregateId, new ListBuffer[EventRow[_]])
 
-      eventsForEntity += EventRow(commandId, userId, aggregateId, expectedVersion + 1, clock.instant(), event)
-      callEventListeners(aggregateId, event)
+    if (eventsForEntity.size > expectedVersion) {
+      throw new ConcurrentAggregateModificationException("Expected version " +
+        expectedVersion + " but is " + eventsForEntity.size)
+    }
+    val version: Int = expectedVersion + 1
+
+    eventsForEntity += EventRow(commandId, userId, aggregateId, version, clock.instant(), event)
+    callEventListeners(aggregateId, version, event)
   }
-
 
   override def getEventsForAggregate[T](aggregateClass: Class[T], uid: AggregateId): Seq[EventRow[T]] = {
     eventsByType.
