@@ -95,7 +95,8 @@ class PostgresEventStore(dbDataSource: DataSource, serializer: ObjectSerializer)
     addEvent(commandId, userId, newAggregateId, 0, event)
 
 
-  override def addEvent(commandId: CommandId, userId: UserId, aggregateId: AggregateId, expectedVersion: Int, event: Event[_]): Unit = {
+  override def addEvent(commandId: CommandId, userId: UserId, aggregateId: AggregateId,
+                        expectedVersion: Int, event: Event[_]): Unit = {
     executeStatement("SELECT add_event(?, ?, ?, ?, ?, ?, ?, ?);") { statement =>
       statement.setLong(1, commandId.uid)
       statement.setLong(2, userId.uid)
@@ -106,7 +107,7 @@ class PostgresEventStore(dbDataSource: DataSource, serializer: ObjectSerializer)
       statement.setInt(7, 0)
       statement.setString(8, serializer.toJson(event))
     }
-    callEventListeners(aggregateId, event)
+    callEventListeners(aggregateId, expectedVersion + 1, event)
   }
 
   override def getAllAggregateIds[T](aggregateClass: Class[T]): List[AggregateId] = {
