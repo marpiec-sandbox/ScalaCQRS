@@ -20,7 +20,7 @@ class PostgresCommandStore(dbDataSource: DataSource, serializer: ObjectSerialize
 
   new CommandSchemaInitializer().initSchema()
 
-  override def addCommand(commandId: CommandId, userId: UserId, command: Command[_]): Unit = {
+  override def addTransformedCommand(commandId: CommandId, userId: UserId, command: Command[_]): Unit = {
     executeStatement(INSERT_COMMAND) {statement =>
       statement.setLong(1, commandId.uid)
       statement.setLong(2, userId.uid)
