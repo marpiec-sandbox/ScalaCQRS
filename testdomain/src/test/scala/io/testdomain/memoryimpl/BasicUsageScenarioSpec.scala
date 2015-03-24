@@ -3,6 +3,7 @@ package io.testdomain.memoryimpl
 import java.time.Clock
 
 import io.scalacqrs.memoryimpl.{MemorySequentialUIDGenerator, MemoryCommandStore, MemoryEventStore}
+import io.testdomain.user.api.event.{UserAddressChanged, UserRemoved}
 import org.scalatest.{MustMatchers, FeatureSpec, GivenWhenThen}
 import MustMatchers._
 import io.scalacqrs.data.UserId
@@ -29,7 +30,8 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
       When("User is registered")
       val currentUserId = UserId.fromAggregateId(uidGenerator.nextAggregateId)
       val registeredUserId = uidGenerator.nextAggregateId
-      val registrationResult = userCommandBus.submit(currentUserId, new RegisterUser(registeredUserId, "Marcin Pieciukiewicz"))
+      val registrationResult = userCommandBus.submit(
+        currentUserId, new RegisterUser(registeredUserId, "Marcin Pieciukiewicz"))
 
       Then("we can get aggregate from userDataStore")
       registrationResult.success mustBe true
@@ -49,8 +51,15 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
       userAggregate = userDataStore.getAggregateByVersion(registeredUserId, 1)
       userAggregate.get.aggregateRoot.get mustBe User("Marcin Pieciukiewicz", None)
 
+      Then("other way gives same object")
+      val other = userDataStore.getAggregateByVersionAndApplyEventToIt(
+        registeredUserId, 1, UserAddressChanged("Warsaw", "Center", "1"))
+      other.get.aggregateRoot.get mustBe
+        User("Marcin Pieciukiewicz", Some(Address("Warsaw", "Center", "1")))
+
       When("User is removed")
-      userCommandBus.submit(currentUserId, new DeleteUser(registeredUserId, 2))
+      val deleteEvent = new DeleteUser(registeredUserId, 2)
+      userCommandBus.submit(currentUserId, deleteEvent)
 
       Then("Will get empty aggregate from userDataStore")
       userAggregate = userDataStore.getAggregate(registeredUserId)
@@ -60,6 +69,9 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
       userAggregate = userDataStore.getAggregateByVersion(registeredUserId, 2)
       userAggregate.get.aggregateRoot.get mustBe User("Marcin Pieciukiewicz", Some(Address("Warsaw", "Center", "1")))
 
+      Then("Will get empty aggregate from userDataStore with applied event")
+      userAggregate = userDataStore.getAggregateByVersionAndApplyEventToIt(registeredUserId, 2, UserRemoved())
+      userAggregate.get.aggregateRoot mustBe empty
 
       When("Deletion is undone")
       userCommandBus.submit(currentUserId, new UndoUserChange(registeredUserId, 3, 1))
@@ -68,7 +80,6 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
       userAggregate = userDataStore.getAggregate(registeredUserId)
       userAggregate.get.version mustBe 4
       userAggregate.get.aggregateRoot.get mustBe User("Marcin Pieciukiewicz", Some(Address("Warsaw", "Center", "1")))
-
 
       When("Address change is undone")
       userCommandBus.submit(currentUserId, new UndoUserChange(registeredUserId, 4, 1))

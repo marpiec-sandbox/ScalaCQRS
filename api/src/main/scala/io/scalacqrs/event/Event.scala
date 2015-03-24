@@ -5,6 +5,7 @@ import java.lang.reflect.Type
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl
 
 abstract class Event[A] {
+  /** TypeTag could be better solution */
   def aggregateType:Class[A] = {
 
     var clazz = this.getClass.asInstanceOf[Class[_]]

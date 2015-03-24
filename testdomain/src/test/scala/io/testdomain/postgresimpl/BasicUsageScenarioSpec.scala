@@ -2,6 +2,7 @@ package io.testdomain.postgresimpl
 
 import io.scalacqrs.postgresimpl.{PostgresUidGenerator, PostgresCommandStore, PostgresEventStore}
 import io.testdomain.postgresimpl.jdbc.ConnectionPoolFactory
+import io.testdomain.user.api.event.{UserRemoved, UserAddressChanged}
 import org.apache.commons.dbcp2.BasicDataSource
 import org.scalatest.{FeatureSpec, GivenWhenThen, BeforeAndAfter, MustMatchers}
 import MustMatchers._
@@ -64,6 +65,11 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen with BeforeA
       userAggregate = userDataStore.getAggregateByVersion(registeredUserId, 1)
       userAggregate.get.aggregateRoot.get mustBe User("Marcin Pieciukiewicz", None)
 
+      Then("other way gives same object")
+      userDataStore.getAggregateByVersionAndApplyEventToIt(
+                                    registeredUserId, 1, UserAddressChanged("Warsaw", "Center", "1"))
+        .get.aggregateRoot.get mustBe User("Marcin Pieciukiewicz", Some(Address("Warsaw", "Center", "1")))
+
       When("User is removed")
       userCommandBus.submit(currentUserId, new DeleteUser(registeredUserId, 2))
 
@@ -74,6 +80,11 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen with BeforeA
       Then("Also we can get previous version of user, before deletion")
       userAggregate = userDataStore.getAggregateByVersion(registeredUserId, 2)
       userAggregate.get.aggregateRoot.get mustBe User("Marcin Pieciukiewicz", Some(Address("Warsaw", "Center", "1")))
+
+      Then("Will get empty aggregate from userDataStore with applied event")
+      userDataStore
+        .getAggregateByVersionAndApplyEventToIt(registeredUserId, 2, UserRemoved())
+        .get.aggregateRoot mustBe empty
 
       When("Deletion is undone")
       userCommandBus.submit(currentUserId, new UndoUserChange(registeredUserId, 3, 1))
