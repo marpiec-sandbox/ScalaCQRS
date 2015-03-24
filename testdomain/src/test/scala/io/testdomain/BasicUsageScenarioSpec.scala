@@ -1,17 +1,19 @@
-package io.testdomain.memoryimpl
+package io.testdomain
 
-import java.time.Clock
-
-import io.scalacqrs.memoryimpl.{MemorySequentialUIDGenerator, MemoryCommandStore, MemoryEventStore}
+import io.scalacqrs.{UIDGenerator, CommandStore, EventStore}
 import io.testdomain.user.api.event.{UserAddressChanged, UserRemoved}
-import org.scalatest.{MustMatchers, FeatureSpec, GivenWhenThen}
+import org.scalatest.{FeatureSpec, GivenWhenThen, MustMatchers}
 import MustMatchers._
 import io.scalacqrs.data.UserId
-import io.testdomain.user.api.command.{UndoUserChange, RegisterUser, DeleteUser, ChangeUserAddress}
-import io.testdomain.user.api.model.{User, Address}
-import io.testdomain.user.{UserDataStore, UserCommandBus}
+import io.testdomain.user.api.command.{ChangeUserAddress, DeleteUser, RegisterUser, UndoUserChange}
+import io.testdomain.user.api.model.{Address, User}
+import io.testdomain.user.{UserCommandBus, UserDataStore}
 
-class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
+abstract class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
+
+  var eventStore: EventStore
+  var commandStore: CommandStore
+  var uidGenerator: UIDGenerator
 
   feature("Aggregate storing and getting with event sourcing") {
 
@@ -19,13 +21,8 @@ class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
 
       Given("EvenStore, DataStore and UID generator, and UserService")
 
-      val eventStore = new MemoryEventStore(Clock.systemDefaultZone())
-      val commandStore = new MemoryCommandStore(Clock.systemDefaultZone())
-      val userDataStore = new UserDataStore(eventStore)
-
-      val uidGenerator = new MemorySequentialUIDGenerator
-
-      val userCommandBus = new UserCommandBus(uidGenerator, commandStore, eventStore)
+      val userDataStore: UserDataStore = new UserDataStore(eventStore)
+      val userCommandBus: UserCommandBus = new UserCommandBus(uidGenerator, commandStore, eventStore)
 
       When("User is registered")
       val currentUserId = UserId.fromAggregateId(uidGenerator.nextAggregateId)
