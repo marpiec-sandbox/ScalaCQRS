@@ -1,6 +1,6 @@
 package io.testdomain
 
-import io.scalacqrs.{UIDGenerator, CommandStore, EventStore}
+import io.scalacqrs._
 import io.testdomain.user.api.event.{UserAddressChanged, UserRemoved}
 import org.scalatest.{FeatureSpec, GivenWhenThen, MustMatchers}
 import MustMatchers._
@@ -11,6 +11,8 @@ import io.testdomain.user.{UserCommandBus, UserDataStore}
 
 abstract class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
 
+/** Can be done more elegant via trait and adding it to scenerios
+  * event store should be reseted becouse of listners */
   var eventStore: EventStore
   var commandStore: CommandStore
   var uidGenerator: UIDGenerator
@@ -35,7 +37,6 @@ abstract class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
 
       var userAggregate = userDataStore.getAggregate(registeredUserId)
       userAggregate.get.aggregateRoot.get mustBe User("Marcin Pieciukiewicz", None)
-
 
       When("Address is defined for user")
       userCommandBus.submit(currentUserId, new ChangeUserAddress(registeredUserId, 1, "Warsaw", "Center", "1"))
@@ -105,6 +106,57 @@ abstract class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
 
     }
 
+    scenario("StateListener: Creation and modification of user aggregate") {
+
+      Given("EvenStore, DataStore and UID generator, and UserService")
+
+      val userDataStore: UserDataStore = new UserDataStore(eventStore)
+      val userCommandBus: UserCommandBus = new UserCommandBus(uidGenerator, commandStore, eventStore)
+      var lastStateUpdate: AggregateState[User] = null
+
+      When("User is registered")
+      eventStore.addStateChangedListener[User](classOf[User],
+        (a: AggregateState[User]) => lastStateUpdate = a)
+
+      val currentUserId = UserId.fromAggregateId(uidGenerator.nextAggregateId)
+      val registeredUserId = uidGenerator.nextAggregateId
+      val registrationResult = userCommandBus.submit(
+        currentUserId, new RegisterUser(registeredUserId, "Marcin Pieciukiewicz"))
+
+      Then("We have right user state")
+      lastStateUpdate.aggregate.aggregateRoot.get mustBe User("Marcin Pieciukiewicz", None)
+
+      When("Address is defined for user")
+      userCommandBus.submit(currentUserId, new ChangeUserAddress(registeredUserId, 1, "Warsaw", "Center", "1"))
+
+      Then("We have right user state")
+      lastStateUpdate.aggregate.aggregateRoot.get mustBe User(
+        "Marcin Pieciukiewicz", Some(Address("Warsaw", "Center", "1")))
+
+      When("User is removed")
+      val deleteEvent = new DeleteUser(registeredUserId, 2)
+      userCommandBus.submit(currentUserId, deleteEvent)
+
+      When("Deletion is undone")
+      userCommandBus.submit(currentUserId, new UndoUserChange(registeredUserId, 3, 1))
+
+      When("Address change is undone")
+      userCommandBus.submit(currentUserId, new UndoUserChange(registeredUserId, 4, 1))
+
+      When("Address is defined for user")
+      userCommandBus.submit(currentUserId, new ChangeUserAddress(registeredUserId, 5, "Warsaw", "Suburb", "1"))
+
+      Then("We have right user state")
+      lastStateUpdate.aggregate.aggregateRoot.get mustBe User(
+        "Marcin Pieciukiewicz", Some(Address("Warsaw", "Suburb", "1")))
+
+      When("New address is defined for user and two event sundone")
+      userCommandBus.submit(currentUserId, new ChangeUserAddress(registeredUserId, 6, "Warsaw", "Somewhere", "1"))
+      userCommandBus.submit(currentUserId, new UndoUserChange(registeredUserId, 7, 2))
+
+      Then("We have right user state")
+      lastStateUpdate.aggregate.aggregateRoot.get mustBe User("Marcin Pieciukiewicz", None)
+    }
   }
 
 }

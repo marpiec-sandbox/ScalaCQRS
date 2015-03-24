@@ -48,8 +48,7 @@ trait EventStore {
   protected def callUpdateListeners[T](aggregateId: AggregateId, version: Int, event: Event[T]): Unit = {
 
     val eventUpdate = AggregateUpdated(aggregateId, version, event)
-    val eventListenersForType = eventListeners
-      .getOrElse(event.aggregateType, mutable.ListBuffer())
+    eventListeners.getOrElse(event.aggregateType, mutable.ListBuffer())
       .foreach(_.apply(eventUpdate))
 
     /** assumed that call from inside of framework should always return success */
@@ -61,8 +60,7 @@ trait EventStore {
 
     val stateUpdate = AggregateState(aggregate, version, event)
     /** sending whole state is bound to same triggers as eventListners */
-    val stateChangedListenersForType = stateChangedListeners
-      .getOrElse(event.aggregateType, mutable.ListBuffer())
+    stateChangedListeners.getOrElse(event.aggregateType, mutable.ListBuffer())
       .foreach(_.apply(stateUpdate))
   }
 }
