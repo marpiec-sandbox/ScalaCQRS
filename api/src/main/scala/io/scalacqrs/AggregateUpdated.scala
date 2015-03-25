@@ -13,4 +13,4 @@ case class AggregateUpdated[T](aggregateId: AggregateId, version: Int, event: Ev
   * Message to communicate new state due to new event
   * @param lastEvent Last Event which took aggregate to actual state
   */
-case class AggregateState[T](aggregate: Aggregate[T], version: Int, lastEvent: Event[T])
+case class AggregateState[T](aggregate: Aggregate[T], lastEvent: Event[T])

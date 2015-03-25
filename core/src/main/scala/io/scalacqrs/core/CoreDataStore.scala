@@ -10,7 +10,6 @@ import io.scalacqrs.exception.{AggregateWasAlreadyDeletedException, IncorrectAgg
 import org.slf4j.LoggerFactory
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl
 
-import scala.collection.mutable
 import scala.util.Try
 
 abstract class CoreDataStore[A](
@@ -62,7 +61,7 @@ abstract class CoreDataStore[A](
   private def getAggregateWithOptionalVersion(
                            id: AggregateId, version: Option[Int]): Try[Aggregate[A]] = {
     // helper methods:
-    def getEventRows(): Seq[EventRow[A]] = {
+    def dbEventRows: Seq[EventRow[A]] = {
       if (version.isDefined) {
         if (version.get < 1) {
           throw new
@@ -88,7 +87,7 @@ abstract class CoreDataStore[A](
     }
     // Body:
     Try {
-      val eventRows = getEventRows()
+      val eventRows = dbEventRows
 
       if (eventRows.isEmpty) throw new NoEventsForAggregateException(
         "Aggregate of type " + aggregateClass + " does not exist.")
