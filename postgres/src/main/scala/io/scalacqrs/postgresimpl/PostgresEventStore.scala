@@ -15,6 +15,8 @@ class PostgresEventStore(dbDataSource: DataSource, serializer: ObjectSerializer)
 
   implicit private val db = dbDataSource
 
+  new EventSchemaInitializer().initSchema()
+
   val SELECT_EVENTS_QUERY = "SELECT command_id, user_id, aggregate_id, version, event_time, event_type, event" +
     " FROM events" +
     " WHERE aggregate_id = ?" +
@@ -44,8 +46,6 @@ class PostgresEventStore(dbDataSource: DataSource, serializer: ObjectSerializer)
   val COUNT_ALL_AGGREGATES = "SELECT count(*) " +
     " FROM aggregates" +
     " WHERE type = ?"
-
-  new EventSchemaInitializer().initSchema()
 
 
   override def getEventsForAggregate[T](aggregateClass: Class[T], uid: AggregateId): Seq[EventRow[T]] = {
@@ -107,7 +107,7 @@ class PostgresEventStore(dbDataSource: DataSource, serializer: ObjectSerializer)
       statement.setInt(7, 0)
       statement.setString(8, serializer.toJson(event))
     }
-    callEventListeners(aggregateId, expectedVersion + 1, event)
+    callUpdateListeners(aggregateId, expectedVersion + 1, event)
   }
 
   override def getAllAggregateIds[T](aggregateClass: Class[T]): List[AggregateId] = {

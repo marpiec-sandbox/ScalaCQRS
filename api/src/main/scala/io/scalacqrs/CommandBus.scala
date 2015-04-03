@@ -21,7 +21,7 @@ abstract class CommandBus(uidGenerator: UIDGenerator, commandStore: CommandStore
       commandStore.addCommand(newCommandId, userId, command)
       result.asInstanceOf[R]
     } catch {
-      case e:Exception => throw new Exception(commandHandlers.toString(), e)
+      case e:Exception => throw new Exception(e.getMessage + " .Handlers: " + commandHandlers.toString(), e)
     }
   }
 

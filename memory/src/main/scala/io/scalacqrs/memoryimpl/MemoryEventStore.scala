@@ -14,14 +14,15 @@ class MemoryEventStore(clock: Clock) extends EventStore {
 
   private val eventsByType = mutable.Map[Class[_], mutable.Map[AggregateId, ListBuffer[EventRow[_]]]]()
 
-
-  override def addFirstEvent(commandId: CommandId, userId: UserId, newAggregateId: AggregateId, event: Event[_]): Unit = {
-    val eventsForType = eventsByType.getOrElseUpdate(event.aggregateType, new mutable.HashMap[AggregateId, ListBuffer[EventRow[_]]])
+  override def addFirstEvent(commandId: CommandId, userId: UserId,
+                             newAggregateId: AggregateId, event: Event[_]): Unit = {
+    val eventsForType = eventsByType.getOrElseUpdate(
+      event.aggregateType, new mutable.HashMap[AggregateId, ListBuffer[EventRow[_]]])
     val eventsForEntity = eventsForType.getOrElseUpdate(newAggregateId, new ListBuffer[EventRow[_]])
     val eventRow = EventRow(commandId, userId, newAggregateId, 1, clock.instant(), event)
     eventsForEntity += eventRow
     // this is always first event so version is constant
-    callEventListeners(newAggregateId, 1, event)
+    callUpdateListeners(newAggregateId, 1, event)
   }
 
   override def addEvent(commandId: CommandId, userId: UserId, aggregateId: AggregateId,
@@ -36,21 +37,25 @@ class MemoryEventStore(clock: Clock) extends EventStore {
     val version: Int = expectedVersion + 1
 
     eventsForEntity += EventRow(commandId, userId, aggregateId, version, clock.instant(), event)
-    callEventListeners(aggregateId, version, event)
+    callUpdateListeners(aggregateId, version, event)
   }
 
   override def getEventsForAggregate[T](aggregateClass: Class[T], uid: AggregateId): Seq[EventRow[T]] = {
-    eventsByType.
-      getOrElse(aggregateClass, throw new NoEventsForAggregateException("No events found for type " + aggregateClass)).
-      getOrElse(uid, throw new NoEventsForAggregateException("No events found for type " + aggregateClass + " with uid " + uid)).
-      toList.asInstanceOf[List[EventRow[T]]]
+    eventsByType
+      .getOrElse(aggregateClass, throw new NoEventsForAggregateException(
+        "No events found for type " + aggregateClass))
+      .getOrElse(uid, throw new NoEventsForAggregateException(
+        "No events found for type " + aggregateClass + " with uid " + uid))
+      .toList.asInstanceOf[List[EventRow[T]]]
   }
 
-  override def getEventsForAggregateFromVersion[T](aggregateClass: Class[T], uid: AggregateId, fromVersion: Int): Seq[EventRow[T]] = {
+  override def getEventsForAggregateFromVersion[T](
+                  aggregateClass: Class[T], uid: AggregateId, fromVersion: Int): Seq[EventRow[T]] = {
     getEventsForAggregate(aggregateClass, uid).drop(fromVersion)
   }
 
-  override def getEventsForAggregateToVersion[T](aggregateClass: Class[T], uid: AggregateId, toVersion: Int): Seq[EventRow[T]] = {
+  override def getEventsForAggregateToVersion[T](
+                  aggregateClass: Class[T], uid: AggregateId, toVersion: Int): Seq[EventRow[T]] = {
     getEventsForAggregate(aggregateClass, uid).take(toVersion)
   }
 
@@ -61,6 +66,5 @@ class MemoryEventStore(clock: Clock) extends EventStore {
   override def countAllAggregates[T](aggregateClass: Class[T]): Long = {
     eventsByType.get(aggregateClass).map(_.size.toLong).getOrElse(0L)
   }
-
 
 }
