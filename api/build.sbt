@@ -2,7 +2,7 @@ name := "api"
 
 organization := "io.scalacqrs"
 
-version := "0.2.2-SNAPSHOT"
+version := "0.2.3-SNAPSHOT"
 
 scalaVersion := "2.11.5"
 
