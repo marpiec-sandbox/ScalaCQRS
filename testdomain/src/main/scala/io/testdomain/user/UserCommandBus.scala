@@ -6,6 +6,7 @@ import io.testdomain.user.commandhandler._
 class UserCommandBus(uidGenerator: UIDGenerator, commandStore: CommandStore, eventStore: EventStore)
   extends CommandBus(uidGenerator, commandStore,
     Array(new RegisterUserHandler(eventStore),
+          new DuplicateUserHandler(eventStore),
           new ChangeUserAddressHandler(eventStore),
           new DeleteUserHandler(eventStore),
           new UndoUserChangeHandler(eventStore)))
