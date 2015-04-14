@@ -4,8 +4,8 @@ import java.lang.reflect.Type
 
 import io.scalacqrs._
 import io.scalacqrs.data.AggregateId
-import io.scalacqrs.event.{Event, EventRow, UndoEvent}
-import io.scalacqrs.eventhandler.{CreationEventHandler, DeletionEventHandler, EventHandler, ModificationEventHandler}
+import io.scalacqrs.event.{DuplicationEvent, Event, EventRow, UndoEvent}
+import io.scalacqrs.eventhandler._
 import io.scalacqrs.exception.{AggregateWasAlreadyDeletedException, IncorrectAggregateVersionException, NoEventsForAggregateException}
 import org.slf4j.LoggerFactory
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl
@@ -73,15 +73,26 @@ abstract class CoreDataStore[A](
         eventStore.getEventsForAggregate(aggregateClass, id)
       }
     }
-    def getAggregate(creatorEventRow: EventRow[A]): Aggregate[A] = {
-      val aggregateRoot = if (creatorEventRow.version != 1) {
+    def getAggregate(eventRow: EventRow[A]): Aggregate[A] = {
+      val aggregateRoot = if (eventRow.version != 1) {
         throw new IllegalStateException(
           "CreatorEvent need to be of version 1, as it always first event for an aggregate. (" +
-            creatorEventRow.event.getClass + " has version " + creatorEventRow.version + ")")
+            eventRow.event.getClass + " has version " + eventRow.version + ")")
       } else {
-        eventHandlers(creatorEventRow.event.getClass.asInstanceOf[Class[Event[A]]])
-          .asInstanceOf[CreationEventHandler[A, Event[A]]]
-          .handleEvent(creatorEventRow.event)
+          eventHandlers(eventRow.event.getClass.asInstanceOf[Class[Event[A]]]) match {
+          case handler: CreationEventHandler[A, Event[A]] => handler.handleEvent(eventRow.event)
+          case handler: DuplicationEventHandler[A, Event[A]] =>
+            val event = eventRow.event.asInstanceOf[DuplicationEvent[A]]
+            val baseAggregate = getAggregateWithOptionalVersion(event.baseAggregateId, Some(event.baseAggregateVersion))
+            if(baseAggregate.isFailure) {
+              throw new IllegalStateException("Unable to get base aggregate")
+            } else if (baseAggregate.get.aggregateRoot.isEmpty) {
+              throw new IllegalStateException("Base aggregate has already been deleted")
+            } else {
+              handler.handleEvent(baseAggregate.get.aggregateRoot.get, event)
+            }
+
+        }
       }
       Aggregate(id, 1, Some(aggregateRoot))
     }

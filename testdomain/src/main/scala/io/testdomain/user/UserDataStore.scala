@@ -8,5 +8,6 @@ import io.testdomain.user.eventhandler._
 class UserDataStore(eventStore: EventStore)
   extends CoreDataStore[User](eventStore,
     Array(UserRegisteredEventHandler,
+      UserDuplicatedEventHandler,
       UserAddressChangedEventHandler,
       UserRemovedEventHandler))

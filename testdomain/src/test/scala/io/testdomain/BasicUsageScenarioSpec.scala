@@ -5,7 +5,7 @@ import io.testdomain.user.api.event.{UserAddressChanged, UserRemoved}
 import org.scalatest.{FeatureSpec, GivenWhenThen, MustMatchers}
 import MustMatchers._
 import io.scalacqrs.data.UserId
-import io.testdomain.user.api.command.{ChangeUserAddress, DeleteUser, RegisterUser, UndoUserChange}
+import io.testdomain.user.api.command._
 import io.testdomain.user.api.model.{Address, User}
 import io.testdomain.user.{UserCommandBus, UserDataStore}
 
@@ -156,6 +156,41 @@ abstract class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
 
       Then("We have right user state")
       lastStateUpdate.aggregate.aggregateRoot.get mustBe User("Marcin Pieciukiewicz", None)
+    }
+
+    scenario("Creating new aggregate based on other aggregate of the same type") {
+
+      Given("EvenStore, DataStore and UID generator, and UserService")
+
+      val userDataStore: UserDataStore = new UserDataStore(eventStore)
+      val userCommandBus: UserCommandBus = new UserCommandBus(uidGenerator, commandStore, eventStore)
+      var lastStateUpdate: AggregateState[User] = null
+
+      When("User is registered")
+
+      val currentUserId = UserId.fromAggregateId(uidGenerator.nextAggregateId)
+      val firstUserId = uidGenerator.nextAggregateId
+      userCommandBus.submit(currentUserId, new RegisterUser(firstUserId, "Marcin Pieciukiewicz"))
+
+      When("Second user is created based on the previous user")
+
+      val secondUserId = uidGenerator.nextAggregateId
+      userCommandBus.submit(currentUserId, new DuplicateUser(secondUserId, firstUserId, 1))
+
+      When("First and Second users' addresses are modified differently")
+      userCommandBus.submit(currentUserId, new ChangeUserAddress(firstUserId, 1, "Warsaw", "Center", "1"))
+      userCommandBus.submit(currentUserId, new ChangeUserAddress(secondUserId, 1, "Cracow", "Main Street", "5"))
+
+      Then("We can get both versions of user")
+      val firstUser = userDataStore.getAggregate(firstUserId).get
+      val secondUser = userDataStore.getAggregate(secondUserId).get
+
+      firstUser.version mustBe 2
+      firstUser.aggregateRoot.get.address.get mustBe Address("Warsaw", "Center", "1")
+
+      secondUser.version mustBe 2
+      secondUser.aggregateRoot.get.address.get mustBe Address("Cracow", "Main Street", "5")
+
     }
   }
 
