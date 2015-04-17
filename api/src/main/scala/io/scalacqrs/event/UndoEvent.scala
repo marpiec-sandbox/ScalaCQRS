@@ -1,3 +1,5 @@
 package io.scalacqrs.event
 
-abstract class UndoEvent[A](val eventsCount: Int) extends Event[A]
+abstract class UndoEvent[A] extends Event[A] {
+  val eventsCount: Int
+}

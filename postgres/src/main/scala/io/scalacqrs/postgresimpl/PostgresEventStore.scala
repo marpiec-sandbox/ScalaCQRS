@@ -11,6 +11,8 @@ import io.scalacqrs.event.{EventRow, Event}
 import scala.collection.mutable.ListBuffer
 import JdbcUtils._
 
+import scala.reflect.runtime.universe._
+
 class PostgresEventStore(dbDataSource: DataSource, serializer: ObjectSerializer) extends EventStore {
 
   implicit private val db = dbDataSource
@@ -48,7 +50,8 @@ class PostgresEventStore(dbDataSource: DataSource, serializer: ObjectSerializer)
     " WHERE type = ?"
 
 
-  override def getEventsForAggregate[T](aggregateClass: Class[T], uid: AggregateId): Seq[EventRow[T]] = {
+  override def getEventsForAggregate[T](aggregateClass: Class[T], uid: AggregateId)
+                                       (implicit tag: TypeTag[T]): Seq[EventRow[T]] = {
 
     getQueryResult(SELECT_EVENTS_QUERY) { statement =>
       statement.setLong(1, uid.uid)
@@ -57,7 +60,8 @@ class PostgresEventStore(dbDataSource: DataSource, serializer: ObjectSerializer)
     }
   }
 
-  override def getEventsForAggregateFromVersion[T](aggregateClass: Class[T], uid: AggregateId, fromVersion: Int): Seq[EventRow[T]] = {
+  override def getEventsForAggregateFromVersion[T](aggregateClass: Class[T], uid: AggregateId, fromVersion: Int)
+                                                  (implicit tag: TypeTag[T]): Seq[EventRow[T]] = {
     getQueryResult(SELECT_EVENTS_QUERY_FROM_VERSION) { statement =>
       statement.setLong(1, uid.uid)
       statement.setInt(2, fromVersion)
@@ -66,7 +70,8 @@ class PostgresEventStore(dbDataSource: DataSource, serializer: ObjectSerializer)
     }
   }
 
-  override def getEventsForAggregateToVersion[T](aggregateClass: Class[T], uid: AggregateId, toVersion: Int): Seq[EventRow[T]] = {
+  override def getEventsForAggregateToVersion[T](aggregateClass: Class[T], uid: AggregateId, toVersion: Int)
+                                                (implicit tag: TypeTag[T]): Seq[EventRow[T]] = {
     getQueryResult(SELECT_EVENTS_QUERY_TO_VERSION) { statement =>
       statement.setLong(1, uid.uid)
       statement.setInt(2, toVersion)
@@ -75,7 +80,8 @@ class PostgresEventStore(dbDataSource: DataSource, serializer: ObjectSerializer)
     }
   }
 
-  private def getEvents[T](resultSet: ResultSet): Seq[EventRow[T]] = {
+  private def getEvents[T](resultSet: ResultSet)
+                          (implicit tag: TypeTag[T]): Seq[EventRow[T]] = {
     var eventsRows = ListBuffer[EventRow[T]]()
     while (resultSet.next()) {
       val eventRow = EventRow[T](
@@ -84,7 +90,7 @@ class PostgresEventStore(dbDataSource: DataSource, serializer: ObjectSerializer)
         AggregateId(resultSet.getLong(3)),
         resultSet.getInt(4),
         resultSet.getTimestamp(5).toInstant,
-        serializer.fromJson(resultSet.getString(7), Class.forName(resultSet.getString(6)).asInstanceOf[Class[Event[T]]]))
+        serializer.fromJson(resultSet.getString(7), typeFromClassName(resultSet.getString(6))))
       eventsRows += eventRow
     }
     eventsRows.toVector
@@ -128,6 +134,11 @@ class PostgresEventStore(dbDataSource: DataSource, serializer: ObjectSerializer)
     } { resultSet =>
       resultSet.getLong(1)
     }
+  }
+
+  private def typeFromClassName[E](className: String): Type = {
+    val clazz = Class.forName(className)
+    runtimeMirror(clazz.getClassLoader).classSymbol(clazz).toType
   }
 
 }

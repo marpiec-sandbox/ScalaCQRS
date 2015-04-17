@@ -15,3 +15,4 @@ class MemorySequentialUIDGenerator extends UIDGenerator {
   override def nextCommandId =  CommandId(commandUid.getAndIncrement)
   
 }
+

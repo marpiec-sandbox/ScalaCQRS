@@ -8,9 +8,9 @@ import io.scalacqrs.data.AggregateId
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl
 
 import collection.mutable
-import scala.reflect._
-
 import scala.util.Try
+
+import scala.reflect.runtime.universe._
 
 abstract class DataStore[A](private val eventStore: EventStore) {
 
@@ -22,17 +22,17 @@ abstract class DataStore[A](private val eventStore: EventStore) {
 
   def getAllAggregateIds(): Seq[AggregateId]
 
-  def getAggregate(id: AggregateId): Try[Aggregate[A]]
+  def getAggregate(id: AggregateId)(implicit tag: TypeTag[A]): Try[Aggregate[A]]
 
-  def getAggregates(ids: Seq[AggregateId]): Seq[Aggregate[A]]
+  def getAggregates(ids: Seq[AggregateId])(implicit tag: TypeTag[A]): Seq[Aggregate[A]]
 
-  def getAggregateByVersion(id: AggregateId, version: Int): Try[Aggregate[A]]
+  def getAggregateByVersion(id: AggregateId, version: Int)(implicit tag: TypeTag[A]): Try[Aggregate[A]]
 
   /* Method created for optimization. This method should use caches.
   * Caches won't be used on undo events.
   * For now only Event store has good access to events */
   private[scalacqrs] def getAggregateByVersionAndApplyEventToIt(
-                            id: AggregateId, version: Int, event: Event[A]): Try[Aggregate[A]]
+                            id: AggregateId, version: Int, event: Event[A])(implicit tag: TypeTag[A]): Try[Aggregate[A]]
 
   /** TypeTag could be better solution */
   def typeInfo: Class[A] = {

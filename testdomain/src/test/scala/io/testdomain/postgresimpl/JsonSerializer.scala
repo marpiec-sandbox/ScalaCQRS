@@ -1,11 +1,16 @@
 package io.testdomain.postgresimpl
 
 import io.scalacqrs.postgresimpl.ObjectSerializer
-import pl.mpieciukiewicz.mpjsons.MPJson
+import pl.mpieciukiewicz.mpjsons.MPJsons
+
+import scala.reflect.runtime.universe._
 
 class JsonSerializer extends ObjectSerializer {
 
-  override def toJson(obj: AnyRef): String = MPJson.serialize(obj)
+  val mpjsons = new MPJsons
 
-  override def fromJson[E](json: String, clazz: Class[E]): E = MPJson.deserialize(json, clazz)
+  override def toJson[E](obj: AnyRef)
+                        (implicit tag: TypeTag[E]): String = mpjsons.serialize(obj)
+
+  override def fromJson[E](json: String, tpe: Type): E = mpjsons.deserialize(json, tpe)
 }

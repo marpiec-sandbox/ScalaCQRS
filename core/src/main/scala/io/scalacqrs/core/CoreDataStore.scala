@@ -12,6 +12,9 @@ import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl
 
 import scala.util.Try
 
+import scala.reflect.runtime.universe._
+
+
 abstract class CoreDataStore[A](
     val eventStore: EventStore, handlers: Seq[EventHandler[A, _ <: Event[A]]])
   extends DataStore[A](eventStore) {
@@ -41,25 +44,26 @@ abstract class CoreDataStore[A](
     eventHandlers += eventClass -> eventHandler
   }
 
-  override def getAggregateByVersionAndApplyEventToIt(
-                  id: AggregateId, version: Int, event: Event[A]): Try[Aggregate[A]] = event match {
+  override def getAggregateByVersionAndApplyEventToIt(id: AggregateId, version: Int, event: Event[A])
+                                                     (implicit tag: TypeTag[A]): Try[Aggregate[A]] = event match {
     case e: UndoEvent[A] => getAggregateByVersion(id, version + 1)
     case _ => getAggregateWithOptionalVersion(id, Some(version))
                 .map( a => updateAggregateWithEvent(event, a))
   }
 
-  override def getAggregateByVersion(id: AggregateId, version: Int): Try[Aggregate[A]] =
+  override def getAggregateByVersion(id: AggregateId, version: Int)(implicit tag: TypeTag[A]): Try[Aggregate[A]] =
     getAggregateWithOptionalVersion(id, Some(version))
 
-  override def getAggregate(id: AggregateId): Try[Aggregate[A]] = getAggregateWithOptionalVersion(id, None)
+  override def getAggregate(id: AggregateId)(implicit tag: TypeTag[A]): Try[Aggregate[A]] = getAggregateWithOptionalVersion(id, None)
 
-  override def getAggregates(ids: Seq[AggregateId]): Seq[Aggregate[A]] = {
+  override def getAggregates(ids: Seq[AggregateId])(implicit tag: TypeTag[A]): Seq[Aggregate[A]] = {
     //TODO for sure optimize for databases
     ids.map(getAggregateWithOptionalVersion(_, None).getOrElse(null)).filter(_ != null)
   }
 
   private def getAggregateWithOptionalVersion(
-                           id: AggregateId, version: Option[Int]): Try[Aggregate[A]] = {
+                           id: AggregateId, version: Option[Int])
+                                             (implicit tag: TypeTag[A]): Try[Aggregate[A]] = {
     // helper methods:
     def dbEventRows: Seq[EventRow[A]] = {
       if (version.isDefined) {

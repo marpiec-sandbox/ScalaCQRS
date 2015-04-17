@@ -9,6 +9,7 @@ import io.scalacqrs.exception.{NoEventsForAggregateException, ConcurrentAggregat
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+import scala.reflect.runtime.universe._
 
 class MemoryEventStore(clock: Clock) extends EventStore {
 
@@ -40,7 +41,7 @@ class MemoryEventStore(clock: Clock) extends EventStore {
     callUpdateListeners(aggregateId, version, event)
   }
 
-  override def getEventsForAggregate[T](aggregateClass: Class[T], uid: AggregateId): Seq[EventRow[T]] = {
+  override def getEventsForAggregate[T](aggregateClass: Class[T], uid: AggregateId)(implicit tag: TypeTag[T]): Seq[EventRow[T]] = {
     eventsByType
       .getOrElse(aggregateClass, throw new NoEventsForAggregateException(
         "No events found for type " + aggregateClass))
@@ -50,12 +51,12 @@ class MemoryEventStore(clock: Clock) extends EventStore {
   }
 
   override def getEventsForAggregateFromVersion[T](
-                  aggregateClass: Class[T], uid: AggregateId, fromVersion: Int): Seq[EventRow[T]] = {
+                  aggregateClass: Class[T], uid: AggregateId, fromVersion: Int)(implicit tag: TypeTag[T]): Seq[EventRow[T]] = {
     getEventsForAggregate(aggregateClass, uid).drop(fromVersion)
   }
 
   override def getEventsForAggregateToVersion[T](
-                  aggregateClass: Class[T], uid: AggregateId, toVersion: Int): Seq[EventRow[T]] = {
+                  aggregateClass: Class[T], uid: AggregateId, toVersion: Int)(implicit tag: TypeTag[T]): Seq[EventRow[T]] = {
     getEventsForAggregate(aggregateClass, uid).take(toVersion)
   }
 

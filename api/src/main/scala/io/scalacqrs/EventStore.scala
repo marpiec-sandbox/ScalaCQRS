@@ -4,6 +4,7 @@ import io.scalacqrs.data.{UserId, AggregateId}
 import io.scalacqrs.event.{EventRow, Event}
 
 import scala.collection.mutable
+import scala.reflect.runtime.universe._
 
 
 // depends on datastore constructor
@@ -22,11 +23,14 @@ trait EventStore {
 
   def addEvent(commandId: CommandId, userId: UserId, aggregateId: AggregateId, expectedVersion: Int, event: Event[_])
 
-  def getEventsForAggregate[T](aggregateClass: Class[T], uid: AggregateId): Seq[EventRow[T]]
+  def getEventsForAggregate[T](aggregateClass: Class[T], uid: AggregateId)
+                              (implicit tag: TypeTag[T]): Seq[EventRow[T]]
 
-  def getEventsForAggregateFromVersion[T](aggregateClass: Class[T], uid: AggregateId, fromVersion: Int): Seq[EventRow[T]]
+  def getEventsForAggregateFromVersion[T](aggregateClass: Class[T], uid: AggregateId, fromVersion: Int)
+                                         (implicit tag: TypeTag[T]): Seq[EventRow[T]]
 
-  def getEventsForAggregateToVersion[T](aggregateClass: Class[T], uid: AggregateId, toVersion: Int): Seq[EventRow[T]]
+  def getEventsForAggregateToVersion[T](aggregateClass: Class[T], uid: AggregateId, toVersion: Int)
+                                       (implicit tag: TypeTag[T]): Seq[EventRow[T]]
 
   def registerDataStore[A](store: DataStore[A]): Unit = {
     dataStores += store.typeInfo -> store
@@ -46,7 +50,7 @@ trait EventStore {
     eventListenersForType += eventListener.asInstanceOf[AggregateState[_] => Unit]
   }
 
-  protected def callUpdateListeners[T](aggregateId: AggregateId, version: Int, event: Event[T]): Unit = {
+  protected def callUpdateListeners[T](aggregateId: AggregateId, version: Int, event: Event[T])(implicit tag: TypeTag[T]): Unit = {
     def callEventListners(): Unit = {
       val eventUpdate = AggregateUpdated(aggregateId, version, event)
 

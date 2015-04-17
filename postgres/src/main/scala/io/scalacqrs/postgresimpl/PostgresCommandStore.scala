@@ -7,6 +7,8 @@ import io.scalacqrs.command.{Command, CommandRow}
 import io.scalacqrs.data.UserId
 import JdbcUtils._
 
+import scala.reflect.runtime.universe._
+
 class PostgresCommandStore(dbDataSource: DataSource, serializer: ObjectSerializer) extends CommandStore {
 
   implicit private val db = dbDataSource
@@ -39,11 +41,16 @@ class PostgresCommandStore(dbDataSource: DataSource, serializer: ObjectSerialize
           CommandId(resultSet.getLong(1)),
           UserId(resultSet.getLong(2)),
           resultSet.getTimestamp(3).toInstant,
-          serializer.fromJson(resultSet.getString(6), Class.forName(resultSet.getString(4)).asInstanceOf[Class[Command[_]]]))
+          serializer.fromJson(resultSet.getString(6), typeFromClassName(resultSet.getString(4))))
       } else {
         throw new IllegalStateException("Command not found " + commandId)
       }
     }
+  }
+
+  private def typeFromClassName[E](className: String): Type = {
+    val clazz = Class.forName(className)
+    runtimeMirror(clazz.getClassLoader).classSymbol(clazz).toType
   }
 
 }
