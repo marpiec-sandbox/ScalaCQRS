@@ -9,6 +9,7 @@ class EventSchemaInitializer(implicit dbDataSource: DataSource)  {
   def initSchema(): Unit = {
     createEventsTable()
     createAggregatesTable()
+    createNoopEventTable()
     try {
       createEventsSequence()
     } catch {
@@ -41,6 +42,15 @@ class EventSchemaInitializer(implicit dbDataSource: DataSource)  {
         |  id BIGINT NOT NULL PRIMARY KEY,
         |  type VARCHAR(128) NOT NULL,
         |  version INT NOT NULL);
+      """.stripMargin)
+  }
+
+  private def createNoopEventTable() {
+    executeStatementWithoutParams(
+      """
+        |CREATE TABLE IF NOT EXISTS noop_events (
+        |  id INT NOT NULL PRIMARY KEY,
+        |  from_version INT NOT NULL)
       """.stripMargin)
   }
 
