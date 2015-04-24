@@ -109,8 +109,12 @@ class EventSchemaInitializer(implicit dbDataSource: DataSource)  {
         |    IF current_version != expected_version THEN
         |	RAISE EXCEPTION 'Concurrent aggregate modification exception, command id %, user id %, aggregate id %, expected version %, current_version %, event_type %, event_type_version %, event %', command_id, user_id, aggregate_id, expected_version, current_version, event_type, event_type_version, event;
         |    END IF;
-        |    INSERT INTO events (id, command_id, user_id, aggregate_id, event_time, version, event_type, event_type_version, event) VALUES (NEXTVAL('events_seq'), command_id, user_id, aggregate_id, current_timestamp, current_version + 1, event_type, event_type_version, event);
+        |    INSERT INTO noop_events (id, from_version) (select events.id, current_version + 1
+        |     from events
+        |     left join undos on events.id = undos.id
+        |     where undos.id is null order by events.version desc limit undo_count)
         |    INSERT INTO noop_events(id, from_version) VALUES (CURRVAL(events_seq), current_version + 1);
+        |    INSERT INTO events (id, command_id, user_id, aggregate_id, event_time, version, event_type, event_type_version, event) VALUES (NEXTVAL('events_seq'), command_id, user_id, aggregate_id, current_timestamp, current_version + 1, event_type, event_type_version, event);
         |    UPDATE aggregates SET version = current_version + 1 WHERE id = aggregate_id;
         |END;
         |$$
