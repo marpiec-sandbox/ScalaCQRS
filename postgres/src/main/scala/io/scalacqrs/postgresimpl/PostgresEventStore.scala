@@ -90,7 +90,7 @@ class PostgresEventStore(dbDataSource: DataSource, serializer: ObjectSerializer)
         AggregateId(resultSet.getLong(3)),
         resultSet.getInt(4),
         resultSet.getTimestamp(5).toInstant,
-        serializer.fromJson(resultSet.getString(7), typeFromClassName(resultSet.getString(6))))
+        serializer.fromJson(resultSet.getString(7), resultSet.getString(6)))
       eventsRows += eventRow
     }
     eventsRows.toVector
@@ -136,9 +136,5 @@ class PostgresEventStore(dbDataSource: DataSource, serializer: ObjectSerializer)
     }
   }
 
-  private def typeFromClassName[E](className: String): Type = {
-    val clazz = Class.forName(className)
-    runtimeMirror(clazz.getClassLoader).classSymbol(clazz).toType
-  }
 
 }

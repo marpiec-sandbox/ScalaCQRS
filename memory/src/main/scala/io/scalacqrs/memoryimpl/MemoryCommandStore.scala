@@ -18,7 +18,7 @@ class MemoryCommandStore(clock: Clock) extends CommandStore {
     if (commands.contains(commandId)) {
       throw new CommandAlreadyExistsException("Command already exists for id " + commandId)
     } else {
-      commands += commandId -> CommandRow(commandId, userId, clock.instant(), command)
+      commands += commandId -> CommandRow(commandId, userId, clock.instant(), command.asInstanceOf[Command[Any]])
     }
   }
   override def getCommandById(commandId: CommandId) = commands.getOrElse(commandId, throw new IllegalArgumentException("No command exists with id " + commandId))

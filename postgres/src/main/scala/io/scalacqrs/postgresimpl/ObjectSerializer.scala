@@ -6,6 +6,6 @@ trait ObjectSerializer {
 
   def toJson[E <: AnyRef : TypeTag](obj: E): String
 
-  def fromJson[E](json: String, tpe: Type): E
+  def fromJson[E](json: String, typeName: String): E
 
 }

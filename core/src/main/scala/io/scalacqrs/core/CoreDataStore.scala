@@ -84,8 +84,8 @@ abstract class CoreDataStore[A](
             eventRow.event.getClass + " has version " + eventRow.version + ")")
       } else {
           eventHandlers(eventRow.event.getClass.asInstanceOf[Class[Event[A]]]) match {
-          case handler: CreationEventHandler[A, Event[A]] => handler.handleEvent(eventRow.event)
-          case handler: DuplicationEventHandler[A, Event[A]] =>
+          case handler: CreationEventHandler[_,_] => handler.asInstanceOf[CreationEventHandler[A, Event[A]]].handleEvent(eventRow.event)
+          case handler: DuplicationEventHandler[_,_] =>
             val event = eventRow.event.asInstanceOf[DuplicationEvent[A]]
             val baseAggregate = getAggregateWithOptionalVersion(event.baseAggregateId, Some(event.baseAggregateVersion))
             if(baseAggregate.isFailure) {
@@ -93,7 +93,7 @@ abstract class CoreDataStore[A](
             } else if (baseAggregate.get.aggregateRoot.isEmpty) {
               throw new IllegalStateException("Base aggregate has already been deleted")
             } else {
-              handler.handleEvent(baseAggregate.get.aggregateRoot.get, event)
+              handler.asInstanceOf[DuplicationEventHandler[A, Event[A]]].handleEvent(baseAggregate.get.aggregateRoot.get, event)
             }
 
         }

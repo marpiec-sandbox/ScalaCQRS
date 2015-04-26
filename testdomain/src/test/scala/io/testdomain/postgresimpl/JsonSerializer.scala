@@ -14,5 +14,5 @@ class JsonSerializer extends ObjectSerializer {
   }
 
 
-  override def fromJson[E](json: String, tpe: Type): E = mpjsons.deserialize(json, tpe)
+  override def fromJson[E](json: String, typeName: String): E = mpjsons.deserialize(json, typeName)
 }

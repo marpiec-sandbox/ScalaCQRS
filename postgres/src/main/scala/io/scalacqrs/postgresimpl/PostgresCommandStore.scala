@@ -41,16 +41,12 @@ class PostgresCommandStore(dbDataSource: DataSource, serializer: ObjectSerialize
           CommandId(resultSet.getLong(1)),
           UserId(resultSet.getLong(2)),
           resultSet.getTimestamp(3).toInstant,
-          serializer.fromJson(resultSet.getString(6), typeFromClassName(resultSet.getString(4))))
+          serializer.fromJson(resultSet.getString(6), resultSet.getString(4)))
       } else {
         throw new IllegalStateException("Command not found " + commandId)
       }
     }
   }
 
-  private def typeFromClassName[E](className: String): Type = {
-    val clazz = Class.forName(className)
-    runtimeMirror(clazz.getClassLoader).classSymbol(clazz).toType
-  }
 
 }
