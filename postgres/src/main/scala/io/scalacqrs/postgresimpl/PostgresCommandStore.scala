@@ -22,13 +22,13 @@ class PostgresCommandStore(dbDataSource: DataSource, serializer: ObjectSerialize
 
   new CommandSchemaInitializer().initSchema()
 
-  override def addTransformedCommand(commandId: CommandId, userId: UserId, command: Command[_]): Unit = {
+  override def addTransformedCommand[C <: Command[_] : TypeTag](commandId: CommandId, userId: UserId, command: C): Unit = {
     executeStatement(INSERT_COMMAND) {statement =>
       statement.setLong(1, commandId.uid)
       statement.setLong(2, userId.uid)
       statement.setString(3, command.getClass.getName)
       statement.setInt(4, 0)
-      statement.setString(5, serializer.toJson(command))
+      statement.setString(5, serializer.toJson[C](command))
     }
   }
 

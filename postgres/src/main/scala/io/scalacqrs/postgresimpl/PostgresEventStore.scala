@@ -97,12 +97,12 @@ class PostgresEventStore(dbDataSource: DataSource, serializer: ObjectSerializer)
   }
 
 
-  override def addFirstEvent(commandId: CommandId, userId: UserId, newAggregateId: AggregateId, event: Event[_]): Unit =
-    addEvent(commandId, userId, newAggregateId, 0, event)
+  override def addFirstEvent[A: TypeTag, E <: Event[A]: TypeTag](commandId: CommandId, userId: UserId, newAggregateId: AggregateId, event: E): Unit =
+    addEvent[A, E](commandId, userId, newAggregateId, 0, event)
 
 
-  override def addEvent(commandId: CommandId, userId: UserId, aggregateId: AggregateId,
-                        expectedVersion: Int, event: Event[_]): Unit = {
+  override def addEvent[A: TypeTag, E <: Event[A]: TypeTag](commandId: CommandId, userId: UserId, aggregateId: AggregateId,
+                        expectedVersion: Int, event: E): Unit = {
     executeStatement("SELECT add_event(?, ?, ?, ?, ?, ?, ?, ?);") { statement =>
       statement.setLong(1, commandId.uid)
       statement.setLong(2, userId.uid)
@@ -111,9 +111,9 @@ class PostgresEventStore(dbDataSource: DataSource, serializer: ObjectSerializer)
       statement.setString(5, event.aggregateType.getName)
       statement.setString(6, event.getClass.getName)
       statement.setInt(7, 0)
-      statement.setString(8, serializer.toJson(event))
+      statement.setString(8, serializer.toJson[E](event))
     }
-    callUpdateListeners(aggregateId, expectedVersion + 1, event)
+    callUpdateListeners[A](aggregateId, expectedVersion + 1, event)
   }
 
   override def getAllAggregateIds[T](aggregateClass: Class[T]): List[AggregateId] = {

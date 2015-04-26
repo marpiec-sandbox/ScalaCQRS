@@ -15,8 +15,8 @@ class MemoryEventStore(clock: Clock) extends EventStore {
 
   private val eventsByType = mutable.Map[Class[_], mutable.Map[AggregateId, ListBuffer[EventRow[_]]]]()
 
-  override def addFirstEvent(commandId: CommandId, userId: UserId,
-                             newAggregateId: AggregateId, event: Event[_]): Unit = {
+  override def addFirstEvent[A: TypeTag, E <: Event[A]: TypeTag](commandId: CommandId, userId: UserId,
+                             newAggregateId: AggregateId, event: E): Unit = {
     val eventsForType = eventsByType.getOrElseUpdate(
       event.aggregateType, new mutable.HashMap[AggregateId, ListBuffer[EventRow[_]]])
     val eventsForEntity = eventsForType.getOrElseUpdate(newAggregateId, new ListBuffer[EventRow[_]])
@@ -26,8 +26,8 @@ class MemoryEventStore(clock: Clock) extends EventStore {
     callUpdateListeners(newAggregateId, 1, event)
   }
 
-  override def addEvent(commandId: CommandId, userId: UserId, aggregateId: AggregateId,
-                        expectedVersion: Int, event: Event[_]): Unit = {
+  override def addEvent[A: TypeTag, E <: Event[A]: TypeTag](commandId: CommandId, userId: UserId, aggregateId: AggregateId,
+                        expectedVersion: Int, event: E): Unit = {
     val eventsForType = eventsByType.getOrElse(event.aggregateType, mutable.Map())
     val eventsForEntity = eventsForType.getOrElseUpdate(aggregateId, new ListBuffer[EventRow[_]])
 

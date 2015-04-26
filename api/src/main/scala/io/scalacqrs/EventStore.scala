@@ -19,9 +19,9 @@ trait EventStore {
 
   def getAllAggregateIds[T](aggregateClass: Class[T]): Seq[AggregateId]
 
-  def addFirstEvent(commandId: CommandId, userId: UserId, newAggregateId: AggregateId, event: Event[_])
+  def addFirstEvent[A: TypeTag, E <: Event[A]: TypeTag](commandId: CommandId, userId: UserId, newAggregateId: AggregateId, event: E)
 
-  def addEvent(commandId: CommandId, userId: UserId, aggregateId: AggregateId, expectedVersion: Int, event: Event[_])
+  def addEvent[A: TypeTag, E <: Event[A]: TypeTag](commandId: CommandId, userId: UserId, aggregateId: AggregateId, expectedVersion: Int, event: E)
 
   def getEventsForAggregate[T](aggregateClass: Class[T], uid: AggregateId)
                               (implicit tag: TypeTag[T]): Seq[EventRow[T]]
@@ -50,7 +50,7 @@ trait EventStore {
     eventListenersForType += eventListener.asInstanceOf[AggregateState[_] => Unit]
   }
 
-  protected def callUpdateListeners[T](aggregateId: AggregateId, version: Int, event: Event[T])(implicit tag: TypeTag[T]): Unit = {
+  protected def callUpdateListeners[A : TypeTag](aggregateId: AggregateId, version: Int, event: Event[A]): Unit = {
     def callEventListners(): Unit = {
       val eventUpdate = AggregateUpdated(aggregateId, version, event)
 
@@ -59,8 +59,8 @@ trait EventStore {
     }
 
   /** assumed that call from inside of framework should always return success */
-    def aggragateState: Aggregate[T] = {
-      val store = dataStores(event.aggregateType).asInstanceOf[DataStore[T]]
+    def aggragateState: Aggregate[A] = {
+      val store = dataStores(event.aggregateType).asInstanceOf[DataStore[A]]
       version match {
         case 1 => store.getAggregate(aggregateId).get
         case _ => store.getAggregateByVersionAndApplyEventToIt(aggregateId, version -1, event).get
