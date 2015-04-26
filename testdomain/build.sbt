@@ -20,6 +20,6 @@ resolvers in ThisBuild ++= Seq(
 libraryDependencies ++= Seq("org.slf4j" % "slf4j-api" % "1.7.7",
   "org.scala-lang" % "scala-reflect" % "2.11.5",
   "org.scalatest" %% "scalatest" % "2.2.2" % Test,
-  "io.mpjsons" %% "mpjsons" % "0.6.0-SNAPSHOT" % Test,
+  "io.mpjsons" %% "mpjsons" % "0.6.1-SNAPSHOT" % Test,
   "org.apache.commons" % "commons-dbcp2" % "2.0.1" % Test,
   "org.postgresql" % "postgresql" % "9.3-1102-jdbc41" % Test)
