@@ -1,6 +1,7 @@
 package io.testdomain
 
 import io.scalacqrs._
+import io.scalacqrs.event.Event
 import io.testdomain.user.api.event.{UserAddressChanged, UserRemoved}
 import org.scalatest.{FeatureSpec, GivenWhenThen, MustMatchers}
 import MustMatchers._
@@ -112,11 +113,11 @@ abstract class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
 
       val userDataStore: UserDataStore = new UserDataStore(eventStore)
       val userCommandBus: UserCommandBus = new UserCommandBus(uidGenerator, commandStore, eventStore)
-      var lastStateUpdate: AggregateState[User] = null
+      var lastStateUpdate: AggregateState[Event[User]] = null
 
       When("User is registered")
-      eventStore.addStateChangedListener[User](classOf[User],
-        (a: AggregateState[User]) => lastStateUpdate = a)
+      eventStore.addStateChangedListener[User](
+        (a: AggregateState[Event[User]]) => lastStateUpdate = a)
 
       val currentUserId = UserId.fromAggregateId(uidGenerator.nextAggregateId)
       val registeredUserId = uidGenerator.nextAggregateId
@@ -164,7 +165,7 @@ abstract class BasicUsageScenarioSpec extends FeatureSpec with GivenWhenThen {
 
       val userDataStore: UserDataStore = new UserDataStore(eventStore)
       val userCommandBus: UserCommandBus = new UserCommandBus(uidGenerator, commandStore, eventStore)
-      var lastStateUpdate: AggregateState[User] = null
+      var lastStateUpdate: AggregateState[Event[User]] = null
 
       When("User is registered")
 

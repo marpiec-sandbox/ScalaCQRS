@@ -6,9 +6,9 @@ import io.scalacqrs.CommandId
 import io.scalacqrs.data.{UserId, AggregateId}
 
 
-case class EventRow[T](commandId: CommandId,
+case class EventRow[+E <: Event[_]](commandId: CommandId,
                        userId: UserId,
                        aggregateId: AggregateId,
                        version:Int,
                        creationTimestamp: Instant,
-                       event: Event[T])
+                       event: E)

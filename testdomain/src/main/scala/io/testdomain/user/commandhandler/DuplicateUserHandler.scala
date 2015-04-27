@@ -11,7 +11,7 @@ import io.testdomain.user.api.model.User
 class DuplicateUserHandler(eventStore: EventStore) extends CommandHandler[DuplicateUser, DuplicateUserResult] {
 
   override def handle(commandId: CommandId, userId: UserId, command: DuplicateUser): DuplicateUserResult = {
-    eventStore.addFirstEvent[User, UserDuplicated](commandId, userId, command.newUserId, UserDuplicated(command.baseUserId, command.baseUserVersion))
+    eventStore.addFirstEvent(commandId, userId, command.newUserId, UserDuplicated(command.baseUserId, command.baseUserVersion))
     DuplicateUserResult(success = true)
   }
 

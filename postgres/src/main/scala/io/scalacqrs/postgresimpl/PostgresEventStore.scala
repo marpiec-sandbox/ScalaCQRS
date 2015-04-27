@@ -50,8 +50,7 @@ class PostgresEventStore(dbDataSource: DataSource, serializer: ObjectSerializer)
     " WHERE type = ?"
 
 
-  override def getEventsForAggregate[T](aggregateClass: Class[T], uid: AggregateId)
-                                       (implicit tag: TypeTag[T]): Seq[EventRow[T]] = {
+  override def getEventsForAggregate[A: TypeTag](uid: AggregateId): Seq[EventRow[Event[A]]] = {
 
     getQueryResult(SELECT_EVENTS_QUERY) { statement =>
       statement.setLong(1, uid.uid)
@@ -60,8 +59,7 @@ class PostgresEventStore(dbDataSource: DataSource, serializer: ObjectSerializer)
     }
   }
 
-  override def getEventsForAggregateFromVersion[T](aggregateClass: Class[T], uid: AggregateId, fromVersion: Int)
-                                                  (implicit tag: TypeTag[T]): Seq[EventRow[T]] = {
+  override def getEventsForAggregateFromVersion[A: TypeTag](uid: AggregateId, fromVersion: Int): Seq[EventRow[Event[A]]] = {
     getQueryResult(SELECT_EVENTS_QUERY_FROM_VERSION) { statement =>
       statement.setLong(1, uid.uid)
       statement.setInt(2, fromVersion)
@@ -70,8 +68,7 @@ class PostgresEventStore(dbDataSource: DataSource, serializer: ObjectSerializer)
     }
   }
 
-  override def getEventsForAggregateToVersion[T](aggregateClass: Class[T], uid: AggregateId, toVersion: Int)
-                                                (implicit tag: TypeTag[T]): Seq[EventRow[T]] = {
+  override def getEventsForAggregateToVersion[A: TypeTag](uid: AggregateId, toVersion: Int): Seq[EventRow[Event[A]]] = {
     getQueryResult(SELECT_EVENTS_QUERY_TO_VERSION) { statement =>
       statement.setLong(1, uid.uid)
       statement.setInt(2, toVersion)
@@ -80,11 +77,11 @@ class PostgresEventStore(dbDataSource: DataSource, serializer: ObjectSerializer)
     }
   }
 
-  private def getEvents[T](resultSet: ResultSet)
-                          (implicit tag: TypeTag[T]): Seq[EventRow[T]] = {
-    var eventsRows = ListBuffer[EventRow[T]]()
+  private def getEvents[A](resultSet: ResultSet)
+                          (implicit tag: TypeTag[A]): Seq[EventRow[Event[A]]] = {
+    var eventsRows = ListBuffer[EventRow[Event[A]]]()
     while (resultSet.next()) {
-      val eventRow = EventRow[T](
+      val eventRow = EventRow[Event[A]](
         CommandId(resultSet.getLong(1)),
         UserId(resultSet.getLong(2)),
         AggregateId(resultSet.getLong(3)),
@@ -97,28 +94,28 @@ class PostgresEventStore(dbDataSource: DataSource, serializer: ObjectSerializer)
   }
 
 
-  override def addFirstEvent[A: TypeTag, E <: Event[A]: TypeTag](commandId: CommandId, userId: UserId, newAggregateId: AggregateId, event: E): Unit =
-    addEvent[A, E](commandId, userId, newAggregateId, 0, event)
+  override def addFirstEvent[E <: Event[_]: TypeTag](commandId: CommandId, userId: UserId, newAggregateId: AggregateId, event: E): Unit =
+    addEvent(commandId, userId, newAggregateId, 0, event)
 
 
-  override def addEvent[A: TypeTag, E <: Event[A]: TypeTag](commandId: CommandId, userId: UserId, aggregateId: AggregateId,
+  override def addEvent[E <: Event[_]: TypeTag](commandId: CommandId, userId: UserId, aggregateId: AggregateId,
                         expectedVersion: Int, event: E): Unit = {
     executeStatement("SELECT add_event(?, ?, ?, ?, ?, ?, ?, ?);") { statement =>
       statement.setLong(1, commandId.uid)
       statement.setLong(2, userId.uid)
       statement.setLong(3, aggregateId.uid)
       statement.setInt(4, expectedVersion)
-      statement.setString(5, event.aggregateType.getName)
+      statement.setString(5, event.aggregateType.typeSymbol.fullName)
       statement.setString(6, event.getClass.getName)
       statement.setInt(7, 0)
       statement.setString(8, serializer.toJson[E](event))
     }
-    callUpdateListeners[A](aggregateId, expectedVersion + 1, event)
+    callUpdateListeners(aggregateId, expectedVersion + 1, event)
   }
 
-  override def getAllAggregateIds[T](aggregateClass: Class[T]): List[AggregateId] = {
+  override def getAllAggregateIds[A: TypeTag]: List[AggregateId] = {
     getQueryResult(COUNT_ALL_AGGREGATES) { statement =>
-      statement.setString(1, aggregateClass.getName)
+      statement.setString(1, typeOf[A].typeSymbol.fullName)
     } { resultSet =>
       var ids = List[AggregateId]()
       while (resultSet.next()) {
@@ -128,9 +125,9 @@ class PostgresEventStore(dbDataSource: DataSource, serializer: ObjectSerializer)
     }
   }
 
-  override def countAllAggregates[T](aggregateClass: Class[T]): Long = {
+  override def countAllAggregates[A: TypeTag]: Long = {
     getQueryResult(COUNT_ALL_AGGREGATES) { statement =>
-      statement.setString(1, aggregateClass.getName)
+      statement.setString(1, typeOf[A].typeSymbol.fullName)
     } { resultSet =>
       resultSet.getLong(1)
     }

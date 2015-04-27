@@ -1,5 +1,7 @@
 package io.scalacqrs.event
 
-abstract class UndoEvent[A] extends Event[A] {
+import scala.reflect.runtime.universe._
+
+abstract class UndoEvent[A: TypeTag] extends Event[A] {
   val eventsCount: Int
 }

@@ -13,23 +13,23 @@ import scala.reflect.runtime.universe._
 
 class MemoryEventStore(clock: Clock) extends EventStore {
 
-  private val eventsByType = mutable.Map[Class[_], mutable.Map[AggregateId, ListBuffer[EventRow[_]]]]()
+  private val eventsByType = mutable.Map[Type, mutable.Map[AggregateId, ListBuffer[EventRow[Event[AnyRef]]]]]()
 
-  override def addFirstEvent[A: TypeTag, E <: Event[A]: TypeTag](commandId: CommandId, userId: UserId,
+  override def addFirstEvent[E <: Event[_]: TypeTag](commandId: CommandId, userId: UserId,
                              newAggregateId: AggregateId, event: E): Unit = {
     val eventsForType = eventsByType.getOrElseUpdate(
-      event.aggregateType, new mutable.HashMap[AggregateId, ListBuffer[EventRow[_]]])
-    val eventsForEntity = eventsForType.getOrElseUpdate(newAggregateId, new ListBuffer[EventRow[_]])
+      event.aggregateType, new mutable.HashMap[AggregateId, ListBuffer[EventRow[Event[AnyRef]]]])
+    val eventsForEntity = eventsForType.getOrElseUpdate(newAggregateId, new ListBuffer[EventRow[Event[AnyRef]]])
     val eventRow = EventRow(commandId, userId, newAggregateId, 1, clock.instant(), event)
-    eventsForEntity += eventRow
+    eventsForEntity += eventRow.asInstanceOf[EventRow[Event[AnyRef]]]
     // this is always first event so version is constant
     callUpdateListeners(newAggregateId, 1, event)
   }
 
-  override def addEvent[A: TypeTag, E <: Event[A]: TypeTag](commandId: CommandId, userId: UserId, aggregateId: AggregateId,
+  override def addEvent[E <: Event[_]: TypeTag](commandId: CommandId, userId: UserId, aggregateId: AggregateId,
                         expectedVersion: Int, event: E): Unit = {
     val eventsForType = eventsByType.getOrElse(event.aggregateType, mutable.Map())
-    val eventsForEntity = eventsForType.getOrElseUpdate(aggregateId, new ListBuffer[EventRow[_]])
+    val eventsForEntity = eventsForType.getOrElseUpdate(aggregateId, new ListBuffer[EventRow[Event[AnyRef]]])
 
     if (eventsForEntity.size > expectedVersion) {
       throw new ConcurrentAggregateModificationException("Expected version " +
@@ -37,35 +37,35 @@ class MemoryEventStore(clock: Clock) extends EventStore {
     }
     val version: Int = expectedVersion + 1
 
-    eventsForEntity += EventRow(commandId, userId, aggregateId, version, clock.instant(), event)
+    eventsForEntity += EventRow(commandId, userId, aggregateId, version, clock.instant(), event.asInstanceOf[Event[AnyRef]])
     callUpdateListeners(aggregateId, version, event)
   }
 
-  override def getEventsForAggregate[T](aggregateClass: Class[T], uid: AggregateId)(implicit tag: TypeTag[T]): Seq[EventRow[T]] = {
+  override def getEventsForAggregate[A : TypeTag](uid: AggregateId): Seq[EventRow[Event[A]]] = {
     eventsByType
-      .getOrElse(aggregateClass, throw new NoEventsForAggregateException(
-        "No events found for type " + aggregateClass))
+      .getOrElse(typeOf[A], throw new NoEventsForAggregateException(
+        "No events found for type " + typeOf[A]))
       .getOrElse(uid, throw new NoEventsForAggregateException(
-        "No events found for type " + aggregateClass + " with uid " + uid))
-      .toList.asInstanceOf[List[EventRow[T]]]
+        "No events found for type " + typeOf[A] + " with uid " + uid))
+      .toList.asInstanceOf[List[EventRow[Event[A]]]]
   }
 
-  override def getEventsForAggregateFromVersion[T](
-                  aggregateClass: Class[T], uid: AggregateId, fromVersion: Int)(implicit tag: TypeTag[T]): Seq[EventRow[T]] = {
-    getEventsForAggregate(aggregateClass, uid).drop(fromVersion)
+  override def getEventsForAggregateFromVersion[A: TypeTag](
+                  uid: AggregateId, fromVersion: Int): Seq[EventRow[Event[A]]] = {
+    getEventsForAggregate(uid).drop(fromVersion)
   }
 
-  override def getEventsForAggregateToVersion[T](
-                  aggregateClass: Class[T], uid: AggregateId, toVersion: Int)(implicit tag: TypeTag[T]): Seq[EventRow[T]] = {
-    getEventsForAggregate(aggregateClass, uid).take(toVersion)
+  override def getEventsForAggregateToVersion[A: TypeTag](
+                  uid: AggregateId, toVersion: Int): Seq[EventRow[Event[A]]] = {
+    getEventsForAggregate(uid).take(toVersion)
   }
 
-  override def getAllAggregateIds[T](aggregateClass: Class[T]): Seq[AggregateId] = {
-    eventsByType.get(aggregateClass).map(_.keys.toList).getOrElse(List())
+  override def getAllAggregateIds[T: TypeTag]: Seq[AggregateId] = {
+    eventsByType.get(typeOf[T]).map(_.keys.toList).getOrElse(List())
   }
 
-  override def countAllAggregates[T](aggregateClass: Class[T]): Long = {
-    eventsByType.get(aggregateClass).map(_.size.toLong).getOrElse(0L)
+  override def countAllAggregates[T: TypeTag]: Long = {
+    eventsByType.get(typeOf[T]).map(_.size.toLong).getOrElse(0L)
   }
 
 }
