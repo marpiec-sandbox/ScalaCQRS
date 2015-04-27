@@ -2,7 +2,7 @@ name := "scala-cqrs"
 
 organization := "io.scalacqrs"
 
-version := "0.2.4-SNAPSHOT"
+version := "0.3.0-SNAPSHOT"
 
 scalaVersion := "2.11.5"
 
