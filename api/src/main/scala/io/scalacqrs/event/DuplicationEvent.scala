@@ -2,7 +2,8 @@ package io.scalacqrs.event
 
 import io.scalacqrs.data.AggregateId
 
-abstract class DuplicationEvent[A]() extends Event[A] {
+import scala.reflect.runtime.universe._
+abstract class DuplicationEvent[A: TypeTag] extends Event[A] {
   val baseAggregateId: AggregateId
   val baseAggregateVersion: Int
 }

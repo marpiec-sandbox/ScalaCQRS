@@ -4,7 +4,8 @@ import io.scalacqrs._
 import io.scalacqrs.commandhandler.CommandHandler
 import io.scalacqrs.data.UserId
 import io.testdomain.user.api.command.{DuplicateUser, DuplicateUserResult}
-import io.testdomain.user.api.event.UserDuplicated
+import io.testdomain.user.api.event.{UserRemoved, UserDuplicated}
+import io.testdomain.user.api.model.User
 
 
 class DuplicateUserHandler(eventStore: EventStore) extends CommandHandler[DuplicateUser, DuplicateUserResult] {

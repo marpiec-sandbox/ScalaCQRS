@@ -2,4 +2,6 @@ package io.scalacqrs.core
 
 import io.scalacqrs.event.Event
 
-case class NoopEvent[A]() extends Event[A]
+import scala.reflect.runtime.universe._
+
+case class NoopEvent[A: TypeTag]() extends Event[A]

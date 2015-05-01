@@ -5,6 +5,7 @@ import io.scalacqrs.commandhandler.CommandHandler
 import io.scalacqrs.data.UserId
 import io.testdomain.user.api.command.{ChangeUserAddress, ChangeUserAddressResult}
 import io.testdomain.user.api.event.UserAddressChanged
+import io.testdomain.user.api.model.User
 
 
 class ChangeUserAddressHandler(eventStore: EventStore) extends CommandHandler[ChangeUserAddress, ChangeUserAddressResult] {

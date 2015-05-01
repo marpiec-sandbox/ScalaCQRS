@@ -15,7 +15,7 @@ import scala.util.Try
 import scala.reflect.runtime.universe._
 
 
-abstract class CoreDataStore[A](
+abstract class CoreDataStore[A: TypeTag](
     val eventStore: EventStore, handlers: Seq[EventHandler[A, _ <: Event[A]]])
   extends DataStore[A](eventStore) {
 
@@ -44,48 +44,47 @@ abstract class CoreDataStore[A](
     eventHandlers += eventClass -> eventHandler
   }
 
-  override def getAggregateByVersionAndApplyEventToIt(id: AggregateId, version: Int, event: Event[A])
-                                                     (implicit tag: TypeTag[A]): Try[Aggregate[A]] = event match {
+  override def getAggregateByVersionAndApplyEventToIt(id: AggregateId, version: Int, event: Event[A]): Try[Aggregate[A]] = event match {
     case e: UndoEvent[A] => getAggregateByVersion(id, version + 1)
     case _ => getAggregateWithOptionalVersion(id, Some(version))
                 .map( a => updateAggregateWithEvent(event, a))
   }
 
-  override def getAggregateByVersion(id: AggregateId, version: Int)(implicit tag: TypeTag[A]): Try[Aggregate[A]] =
+  override def getAggregateByVersion(id: AggregateId, version: Int): Try[Aggregate[A]] =
     getAggregateWithOptionalVersion(id, Some(version))
 
-  override def getAggregate(id: AggregateId)(implicit tag: TypeTag[A]): Try[Aggregate[A]] = getAggregateWithOptionalVersion(id, None)
+  override def getAggregate(id: AggregateId): Try[Aggregate[A]] = getAggregateWithOptionalVersion(id, None)
 
-  override def getAggregates(ids: Seq[AggregateId])(implicit tag: TypeTag[A]): Seq[Aggregate[A]] = {
+  override def getAggregates(ids: Seq[AggregateId]): Seq[Aggregate[A]] = {
     //TODO for sure optimize for databases
     ids.map(getAggregateWithOptionalVersion(_, None).getOrElse(null)).filter(_ != null)
   }
 
   private def getAggregateWithOptionalVersion(
                            id: AggregateId, version: Option[Int])
-                                             (implicit tag: TypeTag[A]): Try[Aggregate[A]] = {
+                                             : Try[Aggregate[A]] = {
     // helper methods:
-    def dbEventRows: Seq[EventRow[A]] = {
+    def dbEventRows: Seq[EventRow[Event[A]]] = {
       if (version.isDefined) {
         if (version.get < 1) {
           throw new
               IncorrectAggregateVersionException("Cannot get aggregates for versions lower than 1")
         } else {
-          eventStore.getEventsForAggregateToVersion(aggregateClass, id, version.get)
+          eventStore.getEventsForAggregateToVersion(id, version.get)
         }
       } else {
-        eventStore.getEventsForAggregate(aggregateClass, id)
+        eventStore.getEventsForAggregate(id)
       }
     }
-    def getAggregate(eventRow: EventRow[A]): Aggregate[A] = {
+    def getAggregate(eventRow: EventRow[Event[A]]): Aggregate[A] = {
       val aggregateRoot = if (eventRow.version != 1) {
         throw new IllegalStateException(
           "CreatorEvent need to be of version 1, as it always first event for an aggregate. (" +
             eventRow.event.getClass + " has version " + eventRow.version + ")")
       } else {
           eventHandlers(eventRow.event.getClass.asInstanceOf[Class[Event[A]]]) match {
-          case handler: CreationEventHandler[A, Event[A]] => handler.handleEvent(eventRow.event)
-          case handler: DuplicationEventHandler[A, Event[A]] =>
+          case handler: CreationEventHandler[_,_] => handler.asInstanceOf[CreationEventHandler[A, Event[A]]].handleEvent(eventRow.event)
+          case handler: DuplicationEventHandler[_,_] =>
             val event = eventRow.event.asInstanceOf[DuplicationEvent[A]]
             val baseAggregate = getAggregateWithOptionalVersion(event.baseAggregateId, Some(event.baseAggregateVersion))
             if(baseAggregate.isFailure) {
@@ -93,7 +92,7 @@ abstract class CoreDataStore[A](
             } else if (baseAggregate.get.aggregateRoot.isEmpty) {
               throw new IllegalStateException("Base aggregate has already been deleted")
             } else {
-              handler.handleEvent(baseAggregate.get.aggregateRoot.get, event)
+              handler.asInstanceOf[DuplicationEventHandler[A, Event[A]]].handleEvent(baseAggregate.get.aggregateRoot.get, event)
             }
 
         }
@@ -109,7 +108,7 @@ abstract class CoreDataStore[A](
 
       val eventRowsUndoApplied = applyUndoEvents(eventRows)
 
-      val creatorEventRow: EventRow[A] = eventRowsUndoApplied.head
+      val creatorEventRow: EventRow[Event[A]] = eventRowsUndoApplied.head
 
       var aggregate = getAggregate(creatorEventRow)
 
@@ -157,9 +156,9 @@ abstract class CoreDataStore[A](
         "Unexpected modification of already deleted aggregate")
   }
 
-  def applyUndoEvents(events: Seq[EventRow[A]]): Seq[EventRow[A]] = {
+  def applyUndoEvents(events: Seq[EventRow[Event[A]]]): Seq[EventRow[Event[A]]] = {
     val noopEvent = NoopEvent[A]()
-    var eventsAfterUndo = List[EventRow[A]]()
+    var eventsAfterUndo = List[EventRow[Event[A]]]()
     var eventsStored = 0
     for(eventRow <- events) {
       eventsStored += 1
@@ -184,11 +183,11 @@ abstract class CoreDataStore[A](
   }
 
   override def getAllAggregateIds(): Seq[AggregateId] = {
-    eventStore.getAllAggregateIds[A](aggregateClass)
+    eventStore.getAllAggregateIds[A]
   }
 
   override def countAllAggregates(): Long = {
-    eventStore.countAllAggregates(aggregateClass)
+    eventStore.countAllAggregates[A]
   }
 
 }
