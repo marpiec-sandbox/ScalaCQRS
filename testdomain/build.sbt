@@ -2,9 +2,9 @@ name := "testdomain"
 
 organization := "io.scalacqrs"
 
-version := "0.3.1-SNAPSHOT"
+version := "0.3.2-SNAPSHOT"
 
-scalaVersion := "2.11.5"
+scalaVersion := "2.11.7"
 
 publish := {}
 
@@ -18,8 +18,8 @@ resolvers in ThisBuild ++= Seq(
   "Local Maven" at Path.userHome.asFile.toURI.toURL + ".m2/repository")
 
 libraryDependencies ++= Seq("org.slf4j" % "slf4j-api" % "1.7.7",
-  "org.scala-lang" % "scala-reflect" % "2.11.5",
+  "org.scala-lang" % "scala-reflect" % "2.11.7",
   "org.scalatest" %% "scalatest" % "2.2.2" % Test,
-  "io.mpjsons" %% "mpjsons" % "0.6.6-SNAPSHOT" % Test,
+  "io.mpjsons" %% "mpjsons" % "0.6.12" % Test,
   "org.apache.commons" % "commons-dbcp2" % "2.0.1" % Test,
   "org.postgresql" % "postgresql" % "9.3-1102-jdbc41" % Test)

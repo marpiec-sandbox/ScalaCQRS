@@ -2,9 +2,9 @@ name := "api"
 
 organization := "io.scalacqrs"
 
-version := "0.3.1-SNAPSHOT"
+version := "0.3.2-SNAPSHOT"
 
-scalaVersion := "2.11.5"
+scalaVersion := "2.11.7"
 
 publishMavenStyle := true
 
@@ -14,4 +14,4 @@ pomIncludeRepository := { _ => false }
 
 publishTo := Some("snapshots" at sys.props.getOrElse("snapshotsRepo", default = "http://someMockRepo.com"))
 
-libraryDependencies ++= Seq("org.scala-lang" % "scala-reflect" % "2.11.5")
+libraryDependencies ++= Seq("org.scala-lang" % "scala-reflect" % "2.11.7")

@@ -2,9 +2,9 @@ name := "postgres"
 
 organization := "io.scalacqrs"
 
-version := "0.3.1-SNAPSHOT"
+version := "0.3.2-SNAPSHOT"
 
-scalaVersion := "2.11.5"
+scalaVersion := "2.11.7"
 
 resolvers in ThisBuild ++= Seq(
   "eclipse repo" at "https://repo.eclipse.org/content/groups/releases/",
@@ -22,8 +22,8 @@ pomIncludeRepository := { _ => false }
 publishTo := Some("snapshots" at sys.props.getOrElse("snapshotsRepo", default = "http://someMockRepo.com"))
 
 libraryDependencies ++= Seq("org.slf4j" % "slf4j-api" % "1.7.7",
-  "org.scala-lang" % "scala-reflect" % "2.11.5",
-  "io.mpjsons" %% "mpjsons" % "0.6.6-SNAPSHOT" % Test,
+  "org.scala-lang" % "scala-reflect" % "2.11.7",
+  "io.mpjsons" %% "mpjsons" % "0.6.12" % Test,
   "org.scalatest" %% "scalatest" % "2.2.2" % Test,
   "org.apache.commons" % "commons-dbcp2" % "2.0.1" % Test,
   "org.postgresql" % "postgresql" % "9.3-1102-jdbc41" % Test)
